@@ -28,7 +28,7 @@ nexusPublishing {
 
 allprojects {
     group = "ru.tinkoff.kora"
-    version = System.getenv().getOrDefault("KORA_VERSION", "1.1.0-SNAPSHOT")
+    version = System.getenv().getOrDefault("KORA_VERSION", "1.2.0-SNAPSHOT")
     repositories {
         mavenCentral()
     }
