@@ -30,6 +30,7 @@ include(
     'json:json-annotation-processor',
     'json:json-symbol-processor',
     'micrometer:micrometer-module',
+    'micrometer:micrometer-registry-kora',
     'opentelemetry:opentelemetry-common',
     'opentelemetry:opentelemetry-module',
     'opentelemetry:opentelemetry-tracing',
