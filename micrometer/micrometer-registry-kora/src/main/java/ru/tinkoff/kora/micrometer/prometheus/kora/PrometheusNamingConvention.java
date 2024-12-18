@@ -3,16 +3,20 @@ package ru.tinkoff.kora.micrometer.prometheus.kora;
 import io.micrometer.common.lang.Nullable;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.config.NamingConvention;
-import io.prometheus.metrics.model.snapshots.PrometheusNaming;
+
+import java.util.regex.Pattern;
 
 /**
- * See <a href=
- * "https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels">Prometheus
- * docs</a> for a specification of the constraints on metric names and labels
+ * See <a href="https://prometheus.io/docs/concepts/data_model/#metric-names-and-labels">...</a> for a
+ * specification of the constraints on metric names and labels
  * <p>
  * Credits to Jon Schneider
  */
 public class PrometheusNamingConvention implements NamingConvention {
+
+    private static final Pattern nameChars = Pattern.compile("[^a-zA-Z0-9_:]");
+
+    private static final Pattern tagKeyChars = Pattern.compile("[^a-zA-Z0-9_]");
 
     private final String timerSuffix;
 
@@ -26,6 +30,9 @@ public class PrometheusNamingConvention implements NamingConvention {
 
     /**
      * Names are snake-cased. They contain a base unit suffix when applicable.
+     * <p>
+     * Names may contain ASCII letters and digits, as well as underscores and colons. They
+     * must match the regex [a-zA-Z_:][a-zA-Z0-9_:]*
      */
     @Override
     public String name(String name, Meter.Type type, @Nullable String baseUnit) {
@@ -41,24 +48,26 @@ public class PrometheusNamingConvention implements NamingConvention {
         }
 
         switch (type) {
-            // The earlier version of this logic in prometheus-simpleclient
-            // handled the case of COUNTER and appended "_total" if conventionName did not
-            // end with it. With the new client, we mustn't do this since it appends
-            // "_total" on its own and also validates and fails if it is already there:
-            // java.lang.IllegalArgumentException: 'api_requests_total': Illegal metric
-            // name. The metric name must not include the '_total' suffix. Call
-            // PrometheusNaming.sanitizeMetricName(name) to avoid this error.
+            case COUNTER:
+                if (!conventionName.endsWith("_total"))
+                    conventionName += "_total";
+                break;
             case TIMER:
             case LONG_TASK_TIMER:
                 if (!timerSuffix.isEmpty() && conventionName.endsWith(timerSuffix)) {
                     conventionName += "_seconds";
-                } else if (!conventionName.endsWith("_seconds")) {
+                }
+                else if (!conventionName.endsWith("_seconds")) {
                     conventionName += timerSuffix + "_seconds";
                 }
                 break;
         }
 
-        return PrometheusNaming.sanitizeMetricName(conventionName);
+        String sanitized = nameChars.matcher(conventionName).replaceAll("_");
+        if (!Character.isLetter(sanitized.charAt(0))) {
+            sanitized = "m_" + sanitized;
+        }
+        return sanitized;
     }
 
     /**
@@ -68,6 +77,13 @@ public class PrometheusNamingConvention implements NamingConvention {
      */
     @Override
     public String tagKey(String key) {
-        return PrometheusNaming.sanitizeLabelName(key);
+        String conventionKey = NamingConvention.snakeCase.tagKey(key);
+
+        String sanitized = tagKeyChars.matcher(conventionKey).replaceAll("_");
+        if (!Character.isLetter(sanitized.charAt(0))) {
+            sanitized = "m_" + sanitized;
+        }
+        return sanitized;
     }
+
 }

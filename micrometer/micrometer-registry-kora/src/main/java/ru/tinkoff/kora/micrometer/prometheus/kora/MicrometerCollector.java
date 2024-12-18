@@ -3,27 +3,24 @@ package ru.tinkoff.kora.micrometer.prometheus.kora;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.config.NamingConvention;
-import io.prometheus.metrics.model.registry.MultiCollector;
-import io.prometheus.metrics.model.snapshots.DataPointSnapshot;
-import io.prometheus.metrics.model.snapshots.MetricMetadata;
-import io.prometheus.metrics.model.snapshots.MetricSnapshot;
-import io.prometheus.metrics.model.snapshots.MetricSnapshots;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.prometheus.client.Collector;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
 
 /**
- * {@link MultiCollector} for Micrometer.
- * <p>
+ * {@link Collector} for Micrometer.
+ *
  * Credits to Jon Schneider
  * Credits to Johnny Lim
- * Credits to Jonatan Ivanov
  */
-class MicrometerCollector implements MultiCollector {
+class MicrometerCollector extends Collector implements Collector.Describable {
+
+    private final Meter.Id id;
 
     private final Map<List<String>, Child> children = new ConcurrentHashMap<>();
 
@@ -31,11 +28,13 @@ class MicrometerCollector implements MultiCollector {
 
     private final List<String> tagKeys;
 
-    // take name to avoid calling NamingConvention#name after the call-site has already
-    // done it
-    MicrometerCollector(String name, Meter.Id id, NamingConvention convention) {
-        this.conventionName = name;
+    private final String help;
+
+    public MicrometerCollector(Meter.Id id, NamingConvention convention, PrometheusConfig config) {
+        this.id = id;
+        this.conventionName = id.getConventionName(convention);
         this.tagKeys = id.getConventionTags(convention).stream().map(Tag::getKey).collect(toList());
+        this.help = config.descriptions() ? Optional.ofNullable(id.getDescription()).orElse(" ") : " ";
     }
 
     public void add(List<String> tagValues, Child child) {
@@ -55,59 +54,79 @@ class MicrometerCollector implements MultiCollector {
     }
 
     @Override
-    public MetricSnapshots collect() {
+    public List<MetricFamilySamples> collect() {
         Map<String, Family> families = new HashMap<>();
 
         for (Child child : children.values()) {
-            child.samples(conventionName, tagKeys)
-                .forEach(family -> families.compute(family.getConventionName(),
-                    (name, matchingFamily) -> matchingFamily != null
-                        ? matchingFamily.addSamples(family.dataPointSnapshots) : family));
+            child.samples(conventionName, tagKeys).forEach(family -> {
+                families.compute(family.getConventionName(), (name, matchingFamily) -> matchingFamily != null
+                        ? matchingFamily.addSamples(family.samples) : family);
+            });
         }
 
-        Collection<MetricSnapshot> metricSnapshots = families.values()
+        return families.values()
             .stream()
-            .map(Family::toMetricSnapshot)
+            .map(family -> new MetricFamilySamples(family.conventionName, family.type, help, family.samples))
             .collect(toList());
+    }
 
-        return new MetricSnapshots(metricSnapshots);
+    @Override
+    public List<MetricFamilySamples> describe() {
+        switch (id.getType()) {
+            case COUNTER:
+                return Collections.singletonList(
+                        new MetricFamilySamples(conventionName, Type.COUNTER, help, Collections.emptyList()));
+
+            case GAUGE:
+                return Collections
+                    .singletonList(new MetricFamilySamples(conventionName, Type.GAUGE, help, Collections.emptyList()));
+
+            case TIMER:
+            case DISTRIBUTION_SUMMARY:
+            case LONG_TASK_TIMER:
+                return Arrays.asList(
+                        new MetricFamilySamples(conventionName, Type.HISTOGRAM, help, Collections.emptyList()),
+                        new MetricFamilySamples(conventionName + "_max", Type.GAUGE, help, Collections.emptyList()));
+
+            default:
+                return Collections.singletonList(
+                        new MetricFamilySamples(conventionName, Type.UNKNOWN, help, Collections.emptyList()));
+        }
     }
 
     interface Child {
 
-        Stream<Family<?>> samples(String conventionName, List<String> tagKeys);
+        Stream<Family> samples(String conventionName, List<String> tagKeys);
 
     }
 
-    static class Family<T extends DataPointSnapshot> {
+    static class Family {
+
+        final Type type;
 
         final String conventionName;
 
-        final MetricMetadata metadata;
+        final List<MetricFamilySamples.Sample> samples = new ArrayList<>();
 
-        final List<T> dataPointSnapshots = new ArrayList<>();
-
-        final Function<Family<T>, MetricSnapshot> metricSnapshotFactory;
-
-        Family(String conventionName, Function<Family<T>, MetricSnapshot> metricSnapshotFactory,
-               MetricMetadata metadata, T... dataPointSnapshots) {
+        Family(Type type, String conventionName, MetricFamilySamples.Sample... samples) {
+            this.type = type;
             this.conventionName = conventionName;
-            this.metricSnapshotFactory = metricSnapshotFactory;
-            this.metadata = metadata;
-            Collections.addAll(this.dataPointSnapshots, dataPointSnapshots);
+            Collections.addAll(this.samples, samples);
+        }
+
+        Family(Type type, String conventionName, Stream<MetricFamilySamples.Sample> samples) {
+            this.type = type;
+            this.conventionName = conventionName;
+            samples.forEach(this.samples::add);
         }
 
         String getConventionName() {
             return conventionName;
         }
 
-        Family<T> addSamples(Collection<T> dataPointSnapshots) {
-            this.dataPointSnapshots.addAll(dataPointSnapshots);
+        Family addSamples(Collection<MetricFamilySamples.Sample> samples) {
+            this.samples.addAll(samples);
             return this;
-        }
-
-        MetricSnapshot toMetricSnapshot() {
-            return metricSnapshotFactory.apply(this);
         }
 
     }

@@ -1,16 +1,18 @@
 package ru.tinkoff.kora.micrometer.prometheus.kora;
 
+import io.micrometer.common.lang.NonNull;
 import io.micrometer.common.lang.Nullable;
 import io.micrometer.core.instrument.AbstractMeter;
 import io.micrometer.core.instrument.Counter;
-import io.prometheus.metrics.core.exemplars.ExemplarSampler;
-import io.prometheus.metrics.model.snapshots.Exemplar;
+import io.prometheus.client.exemplars.CounterExemplarSampler;
+import io.prometheus.client.exemplars.Exemplar;
 
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.DoubleAdder;
 
 /**
  * {@link Counter} for Prometheus.
- * <p>
+ *
  * Credits to Jon Schneider
  * Credits to Jonatan Ivanov
  */
@@ -18,16 +20,18 @@ public class PrometheusCounter extends AbstractMeter implements Counter {
 
     private final DoubleAdder count = new DoubleAdder();
 
+    private final AtomicReference<Exemplar> exemplar = new AtomicReference<>();
+
     @Nullable
-    private final ExemplarSampler exemplarSampler;
+    private final CounterExemplarSampler exemplarSampler;
 
     PrometheusCounter(Id id) {
         this(id, null);
     }
 
-    PrometheusCounter(Id id, @Nullable ExemplarSamplerFactory exemplarSamplerFactory) {
+    PrometheusCounter(Id id, @Nullable CounterExemplarSampler exemplarSampler) {
         super(id);
-        this.exemplarSampler = exemplarSamplerFactory != null ? exemplarSamplerFactory.createExemplarSampler(1) : null;
+        this.exemplarSampler = exemplarSampler;
     }
 
     @Override
@@ -35,7 +39,7 @@ public class PrometheusCounter extends AbstractMeter implements Counter {
         if (amount > 0) {
             count.add(amount);
             if (exemplarSampler != null) {
-                exemplarSampler.observe(amount);
+                updateExemplar(amount, exemplarSampler);
             }
         }
     }
@@ -47,7 +51,18 @@ public class PrometheusCounter extends AbstractMeter implements Counter {
 
     @Nullable
     Exemplar exemplar() {
-        return exemplarSampler != null ? exemplarSampler.collect().getLatest() : null;
+        return exemplar.get();
+    }
+
+    // Similar to exemplar.updateAndGet(...) but it does nothing if the next value is null
+    private void updateExemplar(double amount, @NonNull CounterExemplarSampler exemplarSampler) {
+        Exemplar prev;
+        Exemplar next;
+        do {
+            prev = exemplar.get();
+            next = exemplarSampler.sample(amount, prev);
+        }
+        while (next != null && next != prev && !exemplar.compareAndSet(prev, next));
     }
 
 }

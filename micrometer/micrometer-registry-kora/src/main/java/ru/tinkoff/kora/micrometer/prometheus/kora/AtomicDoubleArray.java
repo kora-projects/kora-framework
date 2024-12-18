@@ -48,7 +48,7 @@ import java.util.function.DoubleUnaryOperator;
  * Credits to author Doug Lea
  * Based on {@link java.util.concurrent.atomic.AtomicLongArray}
  */
-public class AtomicDoubleArray implements java.io.Serializable {
+class AtomicDoubleArray implements java.io.Serializable {
 
     private static final VarHandle AA = MethodHandles.arrayElementVarHandle(double[].class);
     private final double[] array;

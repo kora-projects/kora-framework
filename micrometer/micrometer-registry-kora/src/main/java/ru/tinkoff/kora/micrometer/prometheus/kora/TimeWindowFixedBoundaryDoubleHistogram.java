@@ -63,7 +63,7 @@ public class TimeWindowFixedBoundaryDoubleHistogram extends AbstractTimeWindowHi
 
     @Override
     final void recordDouble(FixedBoundaryDoubleHistogram bucket, double value) {
-        recordLong(bucket, (long) Math.ceil(value));
+        bucket.record(value);
     }
 
     @Override

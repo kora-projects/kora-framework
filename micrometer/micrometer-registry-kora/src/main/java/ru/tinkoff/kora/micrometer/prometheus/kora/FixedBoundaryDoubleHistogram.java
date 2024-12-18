@@ -4,11 +4,10 @@ import io.micrometer.core.instrument.distribution.CountAtBucket;
 
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicLongArray;
 
 class FixedBoundaryDoubleHistogram {
 
-    final AtomicLongArray values;
+    final AtomicDoubleArray values;
 
     private final double[] buckets;
 
@@ -24,7 +23,7 @@ class FixedBoundaryDoubleHistogram {
      */
     FixedBoundaryDoubleHistogram(double[] buckets, boolean isCumulativeBucketCounts) {
         this.buckets = buckets;
-        this.values = new AtomicLongArray(buckets.length);
+        this.values = new AtomicDoubleArray(buckets.length);
         this.isCumulativeBucketCounts = isCumulativeBucketCounts;
     }
 
@@ -40,7 +39,7 @@ class FixedBoundaryDoubleHistogram {
      * @return 0 if bucket is not a valid bucket otherwise number of values recorded
      * between (previous bucket, bucket]
      */
-    private long countAtBucket(double bucket) {
+    private double countAtBucket(double bucket) {
         int index = Arrays.binarySearch(buckets, bucket);
         if (index < 0)
             return 0;
@@ -53,7 +52,7 @@ class FixedBoundaryDoubleHistogram {
         }
     }
 
-    void record(long value) {
+    void record(double value) {
         int index = leastLessThanOrEqualTo(value);
         if (index > -1)
             values.incrementAndGet(index);
@@ -114,7 +113,7 @@ class FixedBoundaryDoubleHistogram {
         long cumulativeCount = 0;
 
         for (int i = 0; i < this.buckets.length; i++) {
-            final long valueAtCurrentBucket = values.get(i);
+            final double valueAtCurrentBucket = values.get(i);
             if (isCumulativeBucketCounts) {
                 cumulativeCount += valueAtCurrentBucket;
                 countAtBuckets[i] = new CountAtBucket(buckets[i], cumulativeCount);
