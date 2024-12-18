@@ -21,7 +21,6 @@ dependencies {
     api project(':micrometer:micrometer-registry-kora')
 
     api libs.micrometer.core
-//    api libs.micrometer.registry.prometheus
     api libs.opentelemetry.semconv
     api libs.opentelemetry.api
 }
