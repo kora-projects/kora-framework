@@ -11,6 +11,7 @@ import io.micrometer.core.instrument.internal.DefaultGauge;
 import io.micrometer.core.instrument.internal.DefaultMeter;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheus.PrometheusNamingConvention;
 import io.prometheus.client.Collector;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.exemplars.Exemplar;
@@ -41,7 +42,7 @@ import static java.util.stream.StreamSupport.stream;
  * Credits to Johnny Lim
  * Credits to Jonatan Ivanov
  */
-public class KoraPrometheusMeterRegistry extends PrometheusMeterRegistry {
+public class KoraMeterRegistry extends PrometheusMeterRegistry {
 
     private final PrometheusConfig prometheusConfig;
 
@@ -52,11 +53,11 @@ public class KoraPrometheusMeterRegistry extends PrometheusMeterRegistry {
     @Nullable
     private final ExemplarSampler exemplarSampler;
 
-    public KoraPrometheusMeterRegistry(PrometheusConfig config) {
+    public KoraMeterRegistry(PrometheusConfig config) {
         this(config, new CollectorRegistry(), Clock.SYSTEM);
     }
 
-    public KoraPrometheusMeterRegistry(PrometheusConfig config, CollectorRegistry registry, Clock clock) {
+    public KoraMeterRegistry(PrometheusConfig config, CollectorRegistry registry, Clock clock) {
         this(config, registry, clock, null);
     }
 
@@ -69,8 +70,8 @@ public class KoraPrometheusMeterRegistry extends PrometheusMeterRegistry {
      * @param exemplarSampler exemplar sampler
      * @since 1.9.0
      */
-    public KoraPrometheusMeterRegistry(PrometheusConfig config, CollectorRegistry registry, Clock clock,
-                                       @Nullable ExemplarSampler exemplarSampler) {
+    public KoraMeterRegistry(PrometheusConfig config, CollectorRegistry registry, Clock clock,
+                             @Nullable ExemplarSampler exemplarSampler) {
         super(config, registry, clock, exemplarSampler);
 
         config.requireValid();
@@ -184,7 +185,7 @@ public class KoraPrometheusMeterRegistry extends PrometheusMeterRegistry {
 
     @Override
     public Counter newCounter(Meter.Id id) {
-        PrometheusCounter counter = new PrometheusCounter(id, exemplarSampler);
+        KoraCounter counter = new KoraCounter(id, exemplarSampler);
         applyToCollector(id, (collector) -> {
             List<String> tagValues = tagValues(id);
             collector.add(tagValues,
@@ -198,7 +199,7 @@ public class KoraPrometheusMeterRegistry extends PrometheusMeterRegistry {
 
     @Override
     public DistributionSummary newDistributionSummary(Meter.Id id, DistributionStatisticConfig distributionStatisticConfig, double scale) {
-        PrometheusDistributionSummary summary = new PrometheusDistributionSummary(id, clock,
+        KoraDistributionSummary summary = new KoraDistributionSummary(id, clock,
             distributionStatisticConfig, scale, prometheusConfig.histogramFlavor(), exemplarSampler);
 
         applyToCollector(id, (collector) -> {
@@ -308,7 +309,7 @@ public class KoraPrometheusMeterRegistry extends PrometheusMeterRegistry {
     @Override
     protected Timer newTimer(Meter.Id id,
                              DistributionStatisticConfig distributionStatisticConfig, PauseDetector pauseDetector) {
-        PrometheusTimer timer = new PrometheusTimer(id, clock, distributionStatisticConfig, pauseDetector,
+        KoraTimer timer = new KoraTimer(id, clock, distributionStatisticConfig, pauseDetector,
             prometheusConfig.histogramFlavor(), exemplarSampler);
         applyToCollector(id, (collector) -> addDistributionStatisticSamples(distributionStatisticConfig, collector,
             timer, timer::lastExemplar, timer::histogramExemplars, tagValues(id), false));
@@ -599,7 +600,7 @@ public class KoraPrometheusMeterRegistry extends PrometheusMeterRegistry {
      * @return This registry
      * @since 1.6.0
      */
-    public KoraPrometheusMeterRegistry throwExceptionOnRegistrationFailure() {
+    public KoraMeterRegistry throwExceptionOnRegistrationFailure() {
         config().onMeterRegistrationFailed((id, reason) -> {
             throw new IllegalArgumentException(reason);
         });

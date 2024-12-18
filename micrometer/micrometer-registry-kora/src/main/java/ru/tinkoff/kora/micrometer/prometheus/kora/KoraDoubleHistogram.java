@@ -23,7 +23,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * Credits to Jonatan Ivanov
  */
-class PrometheusDoubleHistogram extends TimeWindowFixedBoundaryDoubleHistogram {
+class KoraDoubleHistogram extends TimeWindowFixedBoundaryDoubleHistogram {
 
     @Nullable
     private final double[] buckets;
@@ -37,7 +37,7 @@ class PrometheusDoubleHistogram extends TimeWindowFixedBoundaryDoubleHistogram {
     @Nullable
     private final HistogramExemplarSampler exemplarSampler;
 
-    PrometheusDoubleHistogram(Clock clock, DistributionStatisticConfig config, @Nullable HistogramExemplarSampler exemplarSampler) {
+    KoraDoubleHistogram(Clock clock, DistributionStatisticConfig config, @Nullable HistogramExemplarSampler exemplarSampler) {
         super(clock, DistributionStatisticConfig.builder()
             // effectively never rolls over
             .expiry(Duration.ofDays(1825))
@@ -51,14 +51,12 @@ class PrometheusDoubleHistogram extends TimeWindowFixedBoundaryDoubleHistogram {
             if (originalBuckets[originalBuckets.length - 1] != Double.POSITIVE_INFINITY) {
                 this.buckets = Arrays.copyOf(originalBuckets, originalBuckets.length + 1);
                 this.buckets[buckets.length - 1] = Double.POSITIVE_INFINITY;
-            }
-            else {
+            } else {
                 this.buckets = originalBuckets;
             }
             this.exemplars = new AtomicReferenceArray<>(this.buckets.length);
             this.lastExemplar = new AtomicReference<>();
-        }
-        else {
+        } else {
             this.buckets = null;
             this.exemplars = null;
             this.lastExemplar = null;
@@ -92,7 +90,7 @@ class PrometheusDoubleHistogram extends TimeWindowFixedBoundaryDoubleHistogram {
     }
 
     private void updateExemplar(double value, @Nullable TimeUnit sourceUnit, @Nullable TimeUnit destinationUnit,
-            int index) {
+                                int index) {
         double bucketFrom = (index == 0) ? Double.NEGATIVE_INFINITY : buckets[index - 1];
         double bucketTo = buckets[index];
         Exemplar previusBucketExemplar;
@@ -100,15 +98,15 @@ class PrometheusDoubleHistogram extends TimeWindowFixedBoundaryDoubleHistogram {
         Exemplar nextExemplar;
 
         double exemplarValue = (sourceUnit != null && destinationUnit != null)
-                ? TimeUtils.convert(value, sourceUnit, destinationUnit) : value;
+            ? TimeUtils.convert(value, sourceUnit, destinationUnit) : value;
         do {
             previusBucketExemplar = exemplars.get(index);
             previousLastExemplar = lastExemplar.get();
             nextExemplar = exemplarSampler.sample(exemplarValue, bucketFrom, bucketTo, previusBucketExemplar);
         }
         while (nextExemplar != null && nextExemplar != previusBucketExemplar
-                && !(exemplars.compareAndSet(index, previusBucketExemplar, nextExemplar)
-                        && lastExemplar.compareAndSet(previousLastExemplar, nextExemplar)));
+               && !(exemplars.compareAndSet(index, previusBucketExemplar, nextExemplar)
+                    && lastExemplar.compareAndSet(previousLastExemplar, nextExemplar)));
     }
 
     @Nullable
@@ -120,8 +118,7 @@ class PrometheusDoubleHistogram extends TimeWindowFixedBoundaryDoubleHistogram {
             }
 
             return exemplarsArray;
-        }
-        else {
+        } else {
             return null;
         }
     }

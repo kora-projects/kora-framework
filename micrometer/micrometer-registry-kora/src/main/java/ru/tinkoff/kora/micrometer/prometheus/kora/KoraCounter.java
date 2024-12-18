@@ -12,11 +12,11 @@ import java.util.concurrent.atomic.DoubleAdder;
 
 /**
  * {@link Counter} for Prometheus.
- *
+ * <p>
  * Credits to Jon Schneider
  * Credits to Jonatan Ivanov
  */
-public class PrometheusCounter extends AbstractMeter implements Counter {
+class KoraCounter extends AbstractMeter implements Counter {
 
     private final DoubleAdder count = new DoubleAdder();
 
@@ -25,11 +25,11 @@ public class PrometheusCounter extends AbstractMeter implements Counter {
     @Nullable
     private final CounterExemplarSampler exemplarSampler;
 
-    PrometheusCounter(Id id) {
+    KoraCounter(Id id) {
         this(id, null);
     }
 
-    PrometheusCounter(Id id, @Nullable CounterExemplarSampler exemplarSampler) {
+    KoraCounter(Id id, @Nullable CounterExemplarSampler exemplarSampler) {
         super(id);
         this.exemplarSampler = exemplarSampler;
     }

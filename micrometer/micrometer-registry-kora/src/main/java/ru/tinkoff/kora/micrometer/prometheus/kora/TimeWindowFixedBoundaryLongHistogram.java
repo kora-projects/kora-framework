@@ -18,7 +18,7 @@ import java.util.Objects;
  * <p>
  * Credits to Jon Schneider
  */
-public class TimeWindowFixedBoundaryLongHistogram extends AbstractTimeWindowHistogram<FixedBoundaryLongHistogram, Void> {
+class TimeWindowFixedBoundaryLongHistogram extends AbstractTimeWindowHistogram<FixedBoundaryLongHistogram, Void> {
 
     private final double[] buckets;
 
@@ -82,8 +82,7 @@ public class TimeWindowFixedBoundaryLongHistogram extends AbstractTimeWindowHist
     }
 
     @Override
-    void resetAccumulatedHistogram() {
-    }
+    void resetAccumulatedHistogram() {}
 
     @Override
     double valueAtPercentile(double percentile) {

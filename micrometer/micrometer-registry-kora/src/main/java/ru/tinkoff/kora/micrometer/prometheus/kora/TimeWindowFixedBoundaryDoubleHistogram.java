@@ -18,7 +18,7 @@ import java.util.Objects;
  * <p>
  * Credits to Jon Schneider
  */
-public class TimeWindowFixedBoundaryDoubleHistogram extends AbstractTimeWindowHistogram<FixedBoundaryDoubleHistogram, Void> {
+class TimeWindowFixedBoundaryDoubleHistogram extends AbstractTimeWindowHistogram<FixedBoundaryDoubleHistogram, Void> {
 
     private final double[] buckets;
 

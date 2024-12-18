@@ -35,6 +35,7 @@
 
 package ru.tinkoff.kora.micrometer.prometheus.kora;
 
+import java.io.Serializable;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.function.DoubleBinaryOperator;
@@ -48,7 +49,7 @@ import java.util.function.DoubleUnaryOperator;
  * Credits to author Doug Lea
  * Based on {@link java.util.concurrent.atomic.AtomicLongArray}
  */
-class AtomicDoubleArray implements java.io.Serializable {
+class AtomicDoubleArray implements Serializable {
 
     private static final VarHandle AA = MethodHandles.arrayElementVarHandle(double[].class);
     private final double[] array;

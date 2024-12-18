@@ -2,32 +2,34 @@ package ru.tinkoff.kora.micrometer.prometheus.kora;
 
 import io.micrometer.common.lang.NonNull;
 import io.micrometer.common.lang.Nullable;
-import io.micrometer.core.instrument.AbstractDistributionSummary;
+import io.micrometer.core.instrument.AbstractTimer;
 import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.distribution.*;
+import io.micrometer.core.instrument.distribution.pause.PauseDetector;
+import io.micrometer.core.instrument.util.TimeUtils;
 import io.micrometer.prometheus.HistogramFlavor;
 import io.prometheus.client.exemplars.CounterExemplarSampler;
 import io.prometheus.client.exemplars.Exemplar;
 import io.prometheus.client.exemplars.ExemplarSampler;
 
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
 
 /**
- * {@link DistributionSummary} for Prometheus.
- *
+ * {@link Timer} for Prometheus.
+ * <p>
  * Credits to Jon Schneider
  * Credits to Jonatan Ivanov
  */
-public class PrometheusDistributionSummary extends AbstractDistributionSummary {
+class KoraTimer extends AbstractTimer {
 
     private static final CountAtBucket[] EMPTY_HISTOGRAM = new CountAtBucket[0];
 
     private final LongAdder count = new LongAdder();
 
-    private final DoubleAdder amount = new DoubleAdder();
+    private final LongAdder totalTime = new LongAdder();
 
     private final TimeWindowMax max;
 
@@ -44,15 +46,15 @@ public class PrometheusDistributionSummary extends AbstractDistributionSummary {
 
     private boolean histogramExemplarsEnabled = false;
 
-    PrometheusDistributionSummary(Id id, Clock clock, DistributionStatisticConfig distributionStatisticConfig,
-                                  double scale, HistogramFlavor histogramFlavor, @Nullable ExemplarSampler exemplarSampler) {
+    KoraTimer(Id id, Clock clock, DistributionStatisticConfig distributionStatisticConfig,
+              PauseDetector pauseDetector, HistogramFlavor histogramFlavor, @Nullable ExemplarSampler exemplarSampler) {
         super(id, clock,
-                DistributionStatisticConfig.builder()
-                    .percentilesHistogram(false)
-                    .serviceLevelObjectives()
-                    .build()
-                    .merge(distributionStatisticConfig),
-                scale, false);
+            DistributionStatisticConfig.builder()
+                .percentilesHistogram(false)
+                .serviceLevelObjectives()
+                .build()
+                .merge(distributionStatisticConfig),
+            pauseDetector, TimeUnit.SECONDS, false);
 
         this.histogramFlavor = histogramFlavor;
         this.max = new TimeWindowMax(clock, distributionStatisticConfig);
@@ -60,7 +62,7 @@ public class PrometheusDistributionSummary extends AbstractDistributionSummary {
         if (distributionStatisticConfig.isPublishingHistogram()) {
             switch (histogramFlavor) {
                 case Prometheus:
-                    PrometheusDoubleHistogram prometheusHistogram = new PrometheusDoubleHistogram(clock, distributionStatisticConfig, exemplarSampler);
+                    var prometheusHistogram = new KoraLongHistogram(clock, distributionStatisticConfig, exemplarSampler);
                     this.histogram = prometheusHistogram;
                     this.histogramExemplarsEnabled = prometheusHistogram.isExemplarsEnabled();
                     break;
@@ -71,32 +73,32 @@ public class PrometheusDistributionSummary extends AbstractDistributionSummary {
                     this.histogram = null;
                     break;
             }
-        }
-        else {
+        } else {
             this.histogram = null;
         }
 
         if (!this.histogramExemplarsEnabled && exemplarSampler != null) {
             this.exemplarSampler = exemplarSampler;
             this.lastExemplar = new AtomicReference<>();
-        }
-        else {
+        } else {
             this.exemplarSampler = null;
             this.lastExemplar = null;
         }
     }
 
     @Override
-    protected void recordNonNegative(double amount) {
+    protected void recordNonNegative(long amount, TimeUnit unit) {
         count.increment();
-        this.amount.add(amount);
-        max.record(amount);
+        long nanoAmount = TimeUnit.NANOSECONDS.convert(amount, unit);
+        totalTime.add(nanoAmount);
+        max.record(nanoAmount, TimeUnit.NANOSECONDS);
 
         if (histogram != null) {
-            histogram.recordDouble(amount);
+            histogram.recordLong(nanoAmount);
         }
+
         if (!histogramExemplarsEnabled && exemplarSampler != null) {
-            updateLastExemplar(amount, exemplarSampler);
+            updateLastExemplar(TimeUtils.nanosToUnit(amount, baseTimeUnit()), exemplarSampler);
         }
     }
 
@@ -114,9 +116,8 @@ public class PrometheusDistributionSummary extends AbstractDistributionSummary {
     @Nullable
     Exemplar[] histogramExemplars() {
         if (histogramExemplarsEnabled) {
-            return ((PrometheusDoubleHistogram) histogram).exemplars();
-        }
-        else {
+            return ((KoraDoubleHistogram) histogram).exemplars();
+        } else {
             return null;
         }
     }
@@ -124,9 +125,8 @@ public class PrometheusDistributionSummary extends AbstractDistributionSummary {
     @Nullable
     Exemplar lastExemplar() {
         if (histogramExemplarsEnabled) {
-            return ((PrometheusDoubleHistogram) histogram).lastExemplar();
-        }
-        else {
+            return ((KoraDoubleHistogram) histogram).lastExemplar();
+        } else {
             return lastExemplar != null ? lastExemplar.get() : null;
         }
     }
@@ -137,13 +137,13 @@ public class PrometheusDistributionSummary extends AbstractDistributionSummary {
     }
 
     @Override
-    public double totalAmount() {
-        return amount.doubleValue();
+    public double totalTime(TimeUnit unit) {
+        return TimeUtils.nanosToUnit(totalTime.doubleValue(), unit);
     }
 
     @Override
-    public double max() {
-        return max.poll();
+    public double max(TimeUnit unit) {
+        return max.poll(unit);
     }
 
     public HistogramFlavor histogramFlavor() {
@@ -154,6 +154,7 @@ public class PrometheusDistributionSummary extends AbstractDistributionSummary {
      * For Prometheus we cannot use the histogram counts from HistogramSnapshot, as it is
      * based on a rolling histogram. Prometheus requires a histogram that accumulates
      * values over the lifetime of the app.
+     *
      * @return Cumulative histogram buckets.
      */
     public CountAtBucket[] histogramCounts() {
@@ -169,7 +170,6 @@ public class PrometheusDistributionSummary extends AbstractDistributionSummary {
         }
 
         return new HistogramSnapshot(snapshot.count(), snapshot.total(), snapshot.max(), snapshot.percentileValues(),
-                histogramCounts(), snapshot::outputSummary);
+            histogramCounts(), snapshot::outputSummary);
     }
-
 }

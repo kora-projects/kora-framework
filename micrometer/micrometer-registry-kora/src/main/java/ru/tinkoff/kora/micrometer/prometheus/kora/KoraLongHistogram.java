@@ -23,7 +23,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  * <p>
  * Credits to Jonatan Ivanov
  */
-class PrometheusLongHistogram extends TimeWindowFixedBoundaryLongHistogram {
+class KoraLongHistogram extends TimeWindowFixedBoundaryLongHistogram {
 
     @Nullable
     private final double[] buckets;
@@ -37,7 +37,7 @@ class PrometheusLongHistogram extends TimeWindowFixedBoundaryLongHistogram {
     @Nullable
     private final HistogramExemplarSampler exemplarSampler;
 
-    PrometheusLongHistogram(Clock clock, DistributionStatisticConfig config, @Nullable HistogramExemplarSampler exemplarSampler) {
+    KoraLongHistogram(Clock clock, DistributionStatisticConfig config, @Nullable HistogramExemplarSampler exemplarSampler) {
         super(clock, DistributionStatisticConfig.builder()
             // effectively never rolls over
             .expiry(Duration.ofDays(1825))
@@ -51,14 +51,12 @@ class PrometheusLongHistogram extends TimeWindowFixedBoundaryLongHistogram {
             if (originalBuckets[originalBuckets.length - 1] != Double.POSITIVE_INFINITY) {
                 this.buckets = Arrays.copyOf(originalBuckets, originalBuckets.length + 1);
                 this.buckets[buckets.length - 1] = Double.POSITIVE_INFINITY;
-            }
-            else {
+            } else {
                 this.buckets = originalBuckets;
             }
             this.exemplars = new AtomicReferenceArray<>(this.buckets.length);
             this.lastExemplar = new AtomicReference<>();
-        }
-        else {
+        } else {
             this.buckets = null;
             this.exemplars = null;
             this.lastExemplar = null;
@@ -120,8 +118,7 @@ class PrometheusLongHistogram extends TimeWindowFixedBoundaryLongHistogram {
             }
 
             return exemplarsArray;
-        }
-        else {
+        } else {
             return null;
         }
     }

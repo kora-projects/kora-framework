@@ -14,7 +14,7 @@ import static java.util.stream.Collectors.toList;
 
 /**
  * {@link Collector} for Micrometer.
- *
+ * <p>
  * Credits to Jon Schneider
  * Credits to Johnny Lim
  */
@@ -60,7 +60,7 @@ class MicrometerCollector extends Collector implements Collector.Describable {
         for (Child child : children.values()) {
             child.samples(conventionName, tagKeys).forEach(family -> {
                 families.compute(family.getConventionName(), (name, matchingFamily) -> matchingFamily != null
-                        ? matchingFamily.addSamples(family.samples) : family);
+                    ? matchingFamily.addSamples(family.samples) : family);
             });
         }
 
@@ -75,7 +75,7 @@ class MicrometerCollector extends Collector implements Collector.Describable {
         switch (id.getType()) {
             case COUNTER:
                 return Collections.singletonList(
-                        new MetricFamilySamples(conventionName, Type.COUNTER, help, Collections.emptyList()));
+                    new MetricFamilySamples(conventionName, Type.COUNTER, help, Collections.emptyList()));
 
             case GAUGE:
                 return Collections
@@ -85,12 +85,12 @@ class MicrometerCollector extends Collector implements Collector.Describable {
             case DISTRIBUTION_SUMMARY:
             case LONG_TASK_TIMER:
                 return Arrays.asList(
-                        new MetricFamilySamples(conventionName, Type.HISTOGRAM, help, Collections.emptyList()),
-                        new MetricFamilySamples(conventionName + "_max", Type.GAUGE, help, Collections.emptyList()));
+                    new MetricFamilySamples(conventionName, Type.HISTOGRAM, help, Collections.emptyList()),
+                    new MetricFamilySamples(conventionName + "_max", Type.GAUGE, help, Collections.emptyList()));
 
             default:
                 return Collections.singletonList(
-                        new MetricFamilySamples(conventionName, Type.UNKNOWN, help, Collections.emptyList()));
+                    new MetricFamilySamples(conventionName, Type.UNKNOWN, help, Collections.emptyList()));
         }
     }
 
