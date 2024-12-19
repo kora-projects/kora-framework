@@ -64,11 +64,14 @@ sealed interface {{classname}} {
 {{#vendorExtensions.x-discriminator-constant}}
 
   companion object {
-    val DISCRIMINATOR: String = {{{.}}}
-    val DISCRIMINATOR_{{vendorExtensions.x-discriminator-constant-field}}: String = {{{.}}};
+    val DISCRIMINATOR: String = {{{vendorExtensions.x-discriminator-constant}}}
   }
 {{/vendorExtensions.x-discriminator-constant}}
 {{#vendorExtensions.x-discriminator-constants}}
+
+    {{#vendorExtensions.formParamMappers}}
+    private ru.tinkoff.kora.http.client.common.writer.StringParameterConverter<{{paramType}}> {{paramName}}Converter;
+    {{/vendorExtensions.formParamMappers}}
 
   companion object {
     val DISCRIMINATORS: List<String> = listOf({{{vendorExtensions.x-discriminator-constants}}})

@@ -637,17 +637,13 @@ public class KoraCodegen extends DefaultCodegen {
                     var mappings = map.get(mappedModel.getModelName());
 
                     if (mappings.size() == 1) {
-//                        childModel.vars.removeIf(prop -> StringUtils.equals(model.discriminator.getPropertyBaseName(), prop.baseName));
-//                        childModel.allVars.removeIf(prop -> StringUtils.equals(model.discriminator.getPropertyBaseName(), prop.baseName));
-//                        childModel.requiredVars.removeIf(prop -> StringUtils.equals(model.discriminator.getPropertyBaseName(), prop.baseName));
+                        childModel.vars.removeIf(prop -> StringUtils.equals(model.discriminator.getPropertyBaseName(), prop.baseName));
                         childModel.hasVars = !childModel.allVars.isEmpty();
                         childModel.emptyVars = childModel.allVars.isEmpty();
+                        childModel.allVars.removeIf(prop -> StringUtils.equals(model.discriminator.getPropertyBaseName(), prop.baseName));
+                        childModel.requiredVars.removeIf(prop -> StringUtils.equals(model.discriminator.getPropertyBaseName(), prop.baseName));
                     } else if (!childModel.vendorExtensions.containsKey("x-discriminator-values")) {
-                        var property = childModel.allVars.stream()
-                            .filter(prop -> StringUtils.equals(model.discriminator.getPropertyBaseName(), prop.baseName))
-                            .findFirst()
-                            .orElseThrow(() -> new IllegalStateException("Discriminator must be described as property in schema: " + model.name));
-
+                        var property = childModel.allVars.stream().filter(prop -> StringUtils.equals(model.discriminator.getPropertyBaseName(), prop.baseName)).findFirst().get();
                         if (!property.required) {
                             property.setRequired(true);
                             childModel.requiredVars.add(property);
@@ -673,15 +669,12 @@ public class KoraCodegen extends DefaultCodegen {
                         childModel.vendorExtensions.put("x-discriminator-values-check", sb.append(")").toString());
                         childModel.vendorExtensions.put("x-discriminator-constant", mappings.get(0));
                     }
-
                     var separators = params.codegenMode.isJava() ? new String[]{"{\"", "\"}"} : new String[]{"[\"", "\"]"};
                     var discriminatorValues = mappings.stream().collect(Collectors.joining("\", \"", separators[0], separators[1]));
                     childModel.vendorExtensions.put("x-discriminator-value", discriminatorValues);
 
                     if (mappings.size() == 1) {
                         childModel.vendorExtensions.put("x-discriminator-constant", "\"" + mappings.get(0) + "\"");
-                        final String field = getUpperSnakeCase(mappings.get(0));
-                        childModel.vendorExtensions.put("x-discriminator-constant-field", field);
                     } else {
                         var discriminatorConsts = mappings.stream().collect(Collectors.joining("\", \"", "\"", "\""));
                         childModel.vendorExtensions.put("x-discriminator-constants", discriminatorConsts);
@@ -689,17 +682,12 @@ public class KoraCodegen extends DefaultCodegen {
 
                         var mappingValues = mappings.stream()
                             .map(m -> {
-                                final String field = getUpperSnakeCase(m);
-                                final String fieldOld = Arrays.stream(m.split("[^a-zA-Z0-9]"))
+                                final String key = Arrays.stream(m.split("[^a-zA-Z0-9]"))
                                     .map(String::strip)
                                     .map(String::toUpperCase)
                                     .collect(Collectors.joining("_"));
 
-                                if (field.equals(fieldOld)) {
-                                    return Map.of("discriminatorField", field, "discriminatorValue", "\"" + m + "\"");
-                                } else {
-                                    return Map.of("discriminatorField", field, "discriminatorFieldOld", fieldOld, "discriminatorValue", "\"" + m + "\"");
-                                }
+                                return Map.of("discriminatorField", key, "discriminatorValue", "\"" + m + "\"");
                             })
                             .collect(Collectors.toList());
 
@@ -707,7 +695,6 @@ public class KoraCodegen extends DefaultCodegen {
                     }
                 }
             }
-
             if (params.codegenMode.isJava()) {
                 for (var requiredVar : model.allVars) {
                     if (!requiredVar.required) {
@@ -737,15 +724,6 @@ public class KoraCodegen extends DefaultCodegen {
             }
         }
         return objs;
-    }
-
-    private String getUpperSnakeCase(String value) {
-        return Arrays.stream(value.split("[^a-zA-Z0-9]"))
-            .map(String::strip)
-            .flatMap(s -> Arrays.stream(s.split("(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])|( +)")))
-            .map(String::strip)
-            .map(String::toUpperCase)
-            .collect(Collectors.joining("_"));
     }
 
     private <T extends IJsonSchemaValidationProperties> void visitVariableValidation(T variable, @Nullable String type, @Nullable String dataFormat, Map<String, Object> vendorExtensions) {

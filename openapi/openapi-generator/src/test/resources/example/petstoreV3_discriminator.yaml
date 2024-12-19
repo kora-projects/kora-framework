@@ -15,10 +15,9 @@ paths:
       responses:
         '200':
           description: Updated
-
 components:
   schemas:
-    DeliveryAllOf:
+    Delivery:
       type: object
       required:
         - id
@@ -32,113 +31,17 @@ components:
       discriminator:
         propertyName: type
         mapping:
-          SPB: '#/components/schemas/DeliveryAllOfBig'
-          MSK: '#/components/schemas/DeliveryAllOfBig'
+          SPB: '#/components/schemas/BigDelivery'
+          MSK: '#/components/schemas/BigDelivery'
 
-    DeliveryAllOfBig:
+    BigDelivery:
       type: object
       allOf:
-        - $ref: '#/components/schemas/DeliveryAllOf'
+        - $ref: '#/components/schemas/Delivery'
         - type: object
           properties:
             contractName:
               type: string
-
-    DeliverySimple:
-      type: object
-      properties:
-        type:
-          $ref: '#/components/schemas/DeliveryTypeEnum'
-      discriminator:
-        propertyName: type
-        mapping:
-          SPB: '#/components/schemas/DeliverySimpleBig'
-          MSK: '#/components/schemas/DeliverySimpleBig'
-
-    DeliverySimpleBig:
-      type: object
-      properties:
-        contractName:
-          type: string
-        type:
-          $ref: '#/components/schemas/DeliveryTypeEnum'
-
-    ParcelAllOf:
-      type: object
-      required:
-        - id
-        - type
-      properties:
-        id:
-          type: string
-          format: uuid
-      discriminator:
-        propertyName: type
-        mapping:
-          SOCHI: '#/components/schemas/ParcelAllOfBig'
-
-    ParcelAllOfBig:
-      type: object
-      allOf:
-        - $ref: '#/components/schemas/ParcelAllOf'
-        - type: object
-          properties:
-            id:
-              type: string
-              format: uuid
-            contractName:
-              type: string
-
-    ParcelOneOf:
-      oneOf:
-        - $ref: '#/components/schemas/ParcelOneOfSmall'
-        - $ref: '#/components/schemas/ParcelOneOfBig'
-      discriminator:
-        propertyName: type
-        mapping:
-          SMALL: '#/components/schemas/ParcelOneOfSmall'
-          BIG: '#/components/schemas/ParcelOneOfBig'
-
-    ParcelOneOfSmall:
-      type: object
-      properties:
-        type:
-          type: string
-        id:
-          type: string
-          format: uuid
-
-    ParcelOneOfBig:
-      type: object
-      properties:
-        type:
-          type: string
-        contractName:
-          type: string
-
-# int/boolean not supported in JsonDiscriminator
-#    ResponseData:
-#      type: object
-#      properties:
-#        status:
-#          type: boolean
-#      discriminator:
-#        propertyName: status
-#        mapping:
-#          true: '#/components/schemas/ResponseDataSuccess'
-#          false: '#/components/schemas/ResponseDataError'
-#
-#    ResponseDataSuccess:
-#      type: object
-#      properties:
-#        message:
-#          type: string
-#
-#    ResponseDataError:
-#      type: object
-#      properties:
-#        code:
-#          type: int
 
     DeliveryTypeEnum:
       type: string
@@ -173,11 +76,11 @@ components:
       discriminator:
         propertyName: type
         mapping:
-          'Block.Error1': '#/components/schemas/ValidationErrorDtoBlock'
-          'Block.Error2': '#/components/schemas/ValidationErrorDtoBlock'
-          'Prop.Error': '#/components/schemas/ValidationErrorDtoProp'
+          'Block.Error1': '#/components/schemas/BlockValidationErrorDto'
+          'Block.Error2': '#/components/schemas/BlockValidationErrorDto'
+          'Prop.Error': '#/components/schemas/PropValidationErrorDto'
 
-    ValidationErrorDtoProp:
+    PropValidationErrorDto:
       title: PropValidationErrorDto
       allOf:
         - $ref: '#/components/schemas/ValidationErrorDto'
@@ -186,7 +89,7 @@ components:
             type:
               type: string
 
-    ValidationErrorDtoBlock:
+    BlockValidationErrorDto:
       title: PropValidationErrorDto
       allOf:
         - $ref: '#/components/schemas/ValidationErrorDto'
@@ -206,7 +109,7 @@ components:
           type: string
       discriminator:
         propertyName: pet_type
-    PetDog: # "Dog" is a value for the pet_type property (the discriminator value)
+    Dog: # "Dog" is a value for the pet_type property (the discriminator value)
       allOf: # Combines the main `Pet` schema with `Dog`-specific properties
         - $ref: '#/components/schemas/Pet'
         - type: object
@@ -221,7 +124,7 @@ components:
               description: "enum with int value"
               type: int
               enum: [ 5, 7, 8, 10 ]
-    PetCat: # "Cat" is a value for the pet_type property (the discriminator value)
+    Cat: # "Cat" is a value for the pet_type property (the discriminator value)
       allOf: # Combines the main `Pet` schema with `Cat`-specific properties
         - $ref: '#/components/schemas/Pet'
         - type: object
@@ -231,6 +134,6 @@ components:
               type: boolean
             age:
               type: integer
-    PetCommon: # "Cat" is a value for the pet_type property (the discriminator value)
+    CommonPet: # "Cat" is a value for the pet_type property (the discriminator value)
       allOf: # Combines the main `Pet` schema with `Cat`-specific properties
         - $ref: '#/components/schemas/Pet'

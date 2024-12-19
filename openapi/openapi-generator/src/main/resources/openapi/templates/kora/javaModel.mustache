@@ -60,18 +60,12 @@ public record {{classname}}(
 {{/allVars}}){{#vendorExtensions.x-discriminator-value}} implements {{parent}} {{/vendorExtensions.x-discriminator-value}}{
 {{#vendorExtensions.x-discriminator-constant}}
 
-  public static final String DISCRIMINATOR = {{{.}}};
-  public static final String DISCRIMINATOR_{{vendorExtensions.x-discriminator-constant-field}} = {{{.}}};
 {{/vendorExtensions.x-discriminator-constant}}
 {{#vendorExtensions.x-discriminator-constants}}
 
   public static final java.util.List<String> DISCRIMINATORS = java.util.List.of({{{vendorExtensions.x-discriminator-constants}}});
   {{#vendorExtensions.x-discriminator-constant-fields}}
   public static final String DISCRIMINATOR_{{discriminatorField}} = {{{discriminatorValue}}};
-      {{#discriminatorFieldOld}}
-  @Deprecated
-  public static final String DISCRIMINATOR_{{{.}}} = {{{discriminatorValue}}};
-      {{/discriminatorFieldOld}}
   {{/vendorExtensions.x-discriminator-constant-fields}}
 {{/vendorExtensions.x-discriminator-constants}}
 {{#isArray}}
