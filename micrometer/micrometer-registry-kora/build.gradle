@@ -1,0 +1,15 @@
+dependencies {
+    api libs.micrometer.core
+    api libs.prometheus.metrics.tracer
+    api(libs.prometheus.core) {
+        // We only need SpanContext from prometheus-metrics-tracer-common, we don't need
+        // prometheus-metrics-tracer-initializer nor the dependencies it pulls in
+        exclude(group: 'io.prometheus', module: 'prometheus-metrics-tracer-initializer')
+    }
+    implementation libs.prometheus.metrics.formats
+
+    api libs.micrometer.registry.prometheus
+
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}

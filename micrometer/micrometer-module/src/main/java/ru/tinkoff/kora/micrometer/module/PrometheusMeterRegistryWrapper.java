@@ -13,6 +13,7 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import ru.tinkoff.kora.application.graph.Lifecycle;
 import ru.tinkoff.kora.application.graph.Wrapped;
+import ru.tinkoff.kora.micrometer.prometheus.kora.KoraMeterRegistry;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -32,7 +33,7 @@ public final class PrometheusMeterRegistryWrapper implements Lifecycle, Wrapped<
 
     @Override
     public void init() {
-        var meterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        PrometheusMeterRegistry meterRegistry = new KoraMeterRegistry(PrometheusConfig.DEFAULT);
         for (var initializer : initializers) {
             meterRegistry = initializer.apply(meterRegistry);
         }
