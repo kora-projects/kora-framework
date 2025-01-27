@@ -2,10 +2,9 @@ package ru.tinkoff.kora.cache.annotation.processor;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
-import org.jetbrains.annotations.NotNull;
 import ru.tinkoff.kora.cache.caffeine.CaffeineCacheConfig;
-import ru.tinkoff.kora.cache.redis.RedisCacheConfig;
 import ru.tinkoff.kora.cache.redis.RedisCacheClient;
+import ru.tinkoff.kora.cache.redis.RedisCacheConfig;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
