@@ -35,10 +35,10 @@ final class LettuceClusterRedisCacheClient implements RedisCacheClient, Lifecycl
 
     private final RedisClusterClient redisClient;
 
-    // use for pipeline commands
+    // use for pipeline commands only cause lettuce have bad performance when using pool
     private BoundedAsyncPool<StatefulRedisClusterConnection<byte[], byte[]>> pool;
 
-    // always use async cause sync uses JDK Proxy
+    // always use async cause sync uses JDK Proxy wrapped async impl
     private RedisStringAsyncCommands<byte[], byte[]> stringCommands;
     private RedisServerAsyncCommands<byte[], byte[]> serverCommands;
     private RedisKeyAsyncCommands<byte[], byte[]> keyCommands;
