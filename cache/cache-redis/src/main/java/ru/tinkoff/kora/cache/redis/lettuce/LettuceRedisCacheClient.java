@@ -2,9 +2,7 @@ package ru.tinkoff.kora.cache.redis.lettuce;
 
 import io.lettuce.core.*;
 import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.async.RedisKeyAsyncCommands;
-import io.lettuce.core.api.async.RedisServerAsyncCommands;
-import io.lettuce.core.api.async.RedisStringAsyncCommands;
+import io.lettuce.core.api.async.RedisAsyncCommands;
 import io.lettuce.core.codec.ByteArrayCodec;
 import io.lettuce.core.support.AsyncConnectionPoolSupport;
 import io.lettuce.core.support.BoundedAsyncPool;
@@ -34,11 +32,10 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
 
     // use for pipeline commands only cause lettuce have bad performance when using pool
     private BoundedAsyncPool<StatefulRedisConnection<byte[], byte[]>> pool;
+    private StatefulRedisConnection<byte[], byte[]> connection;
 
     // always use async cause sync uses JDK Proxy wrapped async impl
-    private RedisStringAsyncCommands<byte[], byte[]> stringCommands;
-    private RedisServerAsyncCommands<byte[], byte[]> serverCommands;
-    private RedisKeyAsyncCommands<byte[], byte[]> keyCommands;
+    private RedisAsyncCommands<byte[], byte[]> commands;
 
     LettuceRedisCacheClient(RedisClient redisClient, LettuceClientConfig config) {
         this.redisClient = redisClient;
@@ -49,13 +46,13 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
     @Nonnull
     @Override
     public CompletionStage<byte[]> get(byte[] key) {
-        return stringCommands.get(key);
+        return commands.get(key);
     }
 
     @Nonnull
     @Override
     public CompletionStage<Map<byte[], byte[]>> mget(byte[][] keys) {
-        return stringCommands.mget(keys)
+        return commands.mget(keys)
             .thenApply(r -> r.stream()
                 .filter(Value::hasValue)
                 .collect(Collectors.toMap(KeyValue::getKey, Value::getValue)));
@@ -64,7 +61,7 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
     @Nonnull
     @Override
     public CompletionStage<byte[]> getex(byte[] key, long expireAfterMillis) {
-        return stringCommands.getex(key, GetExArgs.Builder.ex(Duration.ofMillis(expireAfterMillis)));
+        return commands.getex(key, GetExArgs.Builder.ex(Duration.ofMillis(expireAfterMillis)));
     }
 
     @SuppressWarnings("unchecked")
@@ -101,18 +98,18 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
     @Nonnull
     @Override
     public CompletionStage<Boolean> set(byte[] key, byte[] value) {
-        return stringCommands.set(key, value).thenApply(r -> true);
+        return commands.set(key, value).thenApply(r -> true);
     }
 
     @Override
     public CompletionStage<Boolean> mset(Map<byte[], byte[]> keyAndValue) {
-        return stringCommands.mset(keyAndValue).thenApply(r -> true);
+        return commands.mset(keyAndValue).thenApply(r -> true);
     }
 
     @Nonnull
     @Override
     public CompletionStage<Boolean> psetex(byte[] key, byte[] value, long expireAfterMillis) {
-        return stringCommands.psetex(key, expireAfterMillis, value).thenApply(r -> true);
+        return commands.psetex(key, expireAfterMillis, value).thenApply(r -> true);
     }
 
     @Nonnull
@@ -144,19 +141,19 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
     @Nonnull
     @Override
     public CompletionStage<Long> del(byte[] key) {
-        return keyCommands.del(key);
+        return commands.del(key);
     }
 
     @Nonnull
     @Override
     public CompletionStage<Long> del(byte[][] keys) {
-        return keyCommands.del(keys);
+        return commands.del(keys);
     }
 
     @Nonnull
     @Override
     public CompletionStage<Boolean> flushAll() {
-        return serverCommands.flushall(FlushMode.SYNC).thenApply(r -> true);
+        return commands.flushall(FlushMode.SYNC).thenApply(r -> true);
     }
 
     @Override
@@ -174,12 +171,8 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
             .build();
 
         this.pool = AsyncConnectionPoolSupport.createBoundedObjectPool(() -> redisClient.connectAsync(ByteArrayCodec.INSTANCE, redisURI), poolConfig);
-
-        var redisConnection = redisClient.connect(ByteArrayCodec.INSTANCE);
-        var asyncCommands = redisConnection.async();
-        this.keyCommands = asyncCommands;
-        this.serverCommands = asyncCommands;
-        this.stringCommands = asyncCommands;
+        this.connection = redisClient.connect(ByteArrayCodec.INSTANCE);
+        this.commands = this.connection.async();
 
         logger.info("Redis Client (Lettuce) started in {}", TimeUtils.tookForLogging(started));
     }
@@ -190,6 +183,7 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
         final long started = TimeUtils.started();
 
         this.pool.close();
+        this.connection.close();
         this.redisClient.shutdown();
 
         logger.info("Redis Client (Lettuce) stopped in {}", TimeUtils.tookForLogging(started));
