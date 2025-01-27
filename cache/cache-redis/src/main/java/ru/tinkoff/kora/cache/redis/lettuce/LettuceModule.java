@@ -6,6 +6,8 @@ import ru.tinkoff.kora.common.DefaultComponent;
 import ru.tinkoff.kora.config.common.Config;
 import ru.tinkoff.kora.config.common.extractor.ConfigValueExtractor;
 
+import java.time.Duration;
+
 public interface LettuceModule {
 
     default LettuceClientConfig lettuceConfig(Config config, ConfigValueExtractor<LettuceClientConfig> extractor) {

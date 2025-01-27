@@ -61,7 +61,7 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
     @Nonnull
     @Override
     public CompletionStage<byte[]> getex(byte[] key, long expireAfterMillis) {
-        return commands.getex(key, GetExArgs.Builder.ex(Duration.ofMillis(expireAfterMillis)));
+        return commands.getex(key, GetExArgs.Builder.px(expireAfterMillis));
     }
 
     @SuppressWarnings("unchecked")
@@ -75,7 +75,7 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
 
             var async = connection.async();
             for (byte[] key : keys) {
-                var future = async.getex(key, GetExArgs.Builder.ex(Duration.ofMillis(expireAfterMillis)))
+                var future = async.getex(key, GetExArgs.Builder.px(expireAfterMillis))
                     .thenApply(v -> (v == null) ? null : Map.entry(key, v))
                     .toCompletableFuture();
 
