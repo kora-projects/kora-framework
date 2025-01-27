@@ -119,7 +119,8 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library("javapoet", "com.squareup", "javapoet").version("1.13.0")
             library("classgraph", "io.github.classgraph", "classgraph").version("4.8.170")
 
-            library('lettuce-core', 'io.lettuce', 'lettuce-core').version('6.3.2.RELEASE')
+            library('lettuce-core', 'io.lettuce', 'lettuce-core').version('6.5.2.RELEASE')
+            library('apache-pool', 'org.apache.commons', 'commons-pool2').version('2.12.0')
             library('quartz', 'org.quartz-scheduler', 'quartz').version('2.3.2')
 
             library('caffeine', 'com.github.ben-manes.caffeine', 'caffeine').version('3.1.8')

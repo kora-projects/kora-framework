@@ -1,7 +1,6 @@
 package ru.tinkoff.kora.cache.redis.testdata;
 
 import ru.tinkoff.kora.cache.redis.*;
-import ru.tinkoff.kora.cache.redis.RedisCacheClient;
 
 public final class DummyCache extends AbstractRedisCache<String, String> {
 

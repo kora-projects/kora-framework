@@ -2,6 +2,7 @@ package ru.tinkoff.kora.cache.annotation.processor;
 
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
 import ru.tinkoff.kora.cache.caffeine.CaffeineCacheConfig;
 import ru.tinkoff.kora.cache.redis.RedisCacheConfig;
 import ru.tinkoff.kora.cache.redis.RedisCacheClient;
@@ -106,6 +107,11 @@ final class CacheRunner {
             }
 
             @Override
+            public CompletionStage<Boolean> psetex(Map<byte[], byte[]> keyAndValue, long expireAfterMillis) {
+                return mset(keyAndValue);
+            }
+
+            @Override
             public CompletionStage<Boolean> psetex(byte[] key, byte[] value, long expireAfterMillis) {
                 return set(key, value);
             }
@@ -128,16 +134,6 @@ final class CacheRunner {
             public CompletionStage<Boolean> flushAll() {
                 cache.clear();
                 return CompletableFuture.completedFuture(true);
-            }
-
-            @Override
-            public void init() throws Exception {
-
-            }
-
-            @Override
-            public void release() throws Exception {
-
             }
         };
     }

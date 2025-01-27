@@ -15,6 +15,7 @@ dependencies {
     implementation libs.netty.common
     implementation libs.netty.handlers
     implementation libs.netty.transports
+    implementation libs.apache.pool
 
     testImplementation testFixtures(project(":annotation-processor-common"))
     testImplementation project(":annotation-processor-common")

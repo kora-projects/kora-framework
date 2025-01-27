@@ -6,15 +6,17 @@ import org.junit.jupiter.api.TestInstance;
 import ru.tinkoff.kora.test.redis.RedisParams;
 import ru.tinkoff.kora.test.redis.RedisTestContainer;
 
+import java.time.Duration;
+
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @RedisTestContainer
-class AsyncCacheTests extends AbstractAsyncCacheTests {
+class SyncCacheExpireWriteTests extends AbstractSyncCacheTests {
 
     @BeforeEach
     void setup(RedisParams redisParams) throws Exception {
         redisParams.execute(cmd -> cmd.flushall(FlushMode.SYNC));
         if (cache == null) {
-            cache = createCache(redisParams);
+            cache = createCacheExpireWrite(redisParams, Duration.ofSeconds(1));
         }
     }
 }

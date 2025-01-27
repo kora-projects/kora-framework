@@ -17,7 +17,7 @@ public final class LettuceClientFactory {
     public AbstractRedisClient build(LettuceClientConfig config) {
         final Duration commandTimeout = config.commandTimeout();
         final Duration socketTimeout = config.socketTimeout();
-        final ProtocolVersion protocolVersion = config.protocolVersion();
+        final ProtocolVersion protocolVersion = config.protocol();
 
         final List<RedisURI> mappedRedisUris = buildRedisURI(config);
 
@@ -30,7 +30,7 @@ public final class LettuceClientFactory {
     public RedisClusterClient buildRedisClusterClient(LettuceClientConfig config) {
         final Duration commandTimeout = config.commandTimeout();
         final Duration socketTimeout = config.socketTimeout();
-        final ProtocolVersion protocolVersion = config.protocolVersion();
+        final ProtocolVersion protocolVersion = config.protocol();
         final List<RedisURI> mappedRedisUris = buildRedisURI(config);
         return buildRedisClusterClientInternal(mappedRedisUris, commandTimeout, socketTimeout, protocolVersion);
     }
@@ -39,7 +39,7 @@ public final class LettuceClientFactory {
     public RedisClient buildRedisClient(LettuceClientConfig config) {
         final Duration commandTimeout = config.commandTimeout();
         final Duration socketTimeout = config.socketTimeout();
-        final ProtocolVersion protocolVersion = config.protocolVersion();
+        final ProtocolVersion protocolVersion = config.protocol();
         final List<RedisURI> mappedRedisUris = buildRedisURI(config);
         return buildRedisClientInternal(mappedRedisUris.get(0), commandTimeout, socketTimeout, protocolVersion);
     }
@@ -96,7 +96,7 @@ public final class LettuceClientFactory {
         return client;
     }
 
-    private static List<RedisURI> buildRedisURI(LettuceClientConfig config) {
+    static List<RedisURI> buildRedisURI(LettuceClientConfig config) {
         final String uri = config.uri();
         final Integer database = config.database();
         final String user = config.user();
@@ -115,7 +115,9 @@ public final class LettuceClientFactory {
                     builder = builder.withPassword(((CharSequence) password));
                 }
 
-                return builder.build();
+                return builder
+                    .withTimeout(config.commandTimeout())
+                    .build();
             })
             .toList();
     }
