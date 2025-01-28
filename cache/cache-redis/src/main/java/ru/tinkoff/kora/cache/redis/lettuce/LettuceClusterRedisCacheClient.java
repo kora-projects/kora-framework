@@ -1,8 +1,12 @@
 package ru.tinkoff.kora.cache.redis.lettuce;
 
-import io.lettuce.core.*;
-import io.lettuce.core.api.StatefulRedisConnection;
-import io.lettuce.core.api.async.RedisAsyncCommands;
+import io.lettuce.core.FlushMode;
+import io.lettuce.core.GetExArgs;
+import io.lettuce.core.KeyValue;
+import io.lettuce.core.Value;
+import io.lettuce.core.cluster.RedisClusterClient;
+import io.lettuce.core.cluster.api.StatefulRedisClusterConnection;
+import io.lettuce.core.cluster.api.async.RedisAdvancedClusterAsyncCommands;
 import io.lettuce.core.codec.ByteArrayCodec;
 import io.lettuce.core.support.AsyncConnectionPoolSupport;
 import io.lettuce.core.support.BoundedAsyncPool;
@@ -23,24 +27,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.stream.Collectors;
 
-final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
+final class LettuceClusterRedisCacheClient implements RedisCacheClient, Lifecycle {
 
-    private static final Logger logger = LoggerFactory.getLogger(LettuceRedisCacheClient.class);
+    private static final Logger logger = LoggerFactory.getLogger(LettuceClusterRedisCacheClient.class);
 
-    private final RedisURI redisURI;
-    private final RedisClient redisClient;
+    private final RedisClusterClient redisClient;
 
     // use for pipeline commands only cause lettuce have bad performance when using pool
-    private BoundedAsyncPool<StatefulRedisConnection<byte[], byte[]>> pool;
-    private StatefulRedisConnection<byte[], byte[]> connection;
+    private BoundedAsyncPool<StatefulRedisClusterConnection<byte[], byte[]>> pool;
+    private StatefulRedisClusterConnection<byte[], byte[]> connection;
 
     // always use async cause sync uses JDK Proxy wrapped async impl
-    private RedisAsyncCommands<byte[], byte[]> commands;
+    private RedisAdvancedClusterAsyncCommands<byte[], byte[]> commands;
 
-    LettuceRedisCacheClient(RedisClient redisClient, LettuceClientConfig config) {
+    LettuceClusterRedisCacheClient(RedisClusterClient redisClient) {
         this.redisClient = redisClient;
-        final List<RedisURI> redisURIs = LettuceClientFactory.buildRedisURI(config);
-        this.redisURI = redisURIs.size() == 1 ? redisURIs.get(0) : null;
     }
 
     @Nonnull
@@ -170,7 +171,7 @@ final class LettuceRedisCacheClient implements RedisCacheClient, Lifecycle {
             .testOnRelease(false)
             .build();
 
-        this.pool = AsyncConnectionPoolSupport.createBoundedObjectPool(() -> redisClient.connectAsync(ByteArrayCodec.INSTANCE, redisURI), poolConfig);
+        this.pool = AsyncConnectionPoolSupport.createBoundedObjectPool(() -> redisClient.connectAsync(ByteArrayCodec.INSTANCE), poolConfig, false);
         this.connection = redisClient.connect(ByteArrayCodec.INSTANCE);
         this.commands = this.connection.async();
 

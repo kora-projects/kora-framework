@@ -1,8 +1,6 @@
 package ru.tinkoff.kora.cache.redis;
 
 import jakarta.annotation.Nullable;
-import ru.tinkoff.kora.application.graph.TypeRef;
-import ru.tinkoff.kora.cache.redis.lettuce.LettuceModule;
 import ru.tinkoff.kora.cache.telemetry.CacheMetrics;
 import ru.tinkoff.kora.cache.telemetry.CacheTracer;
 import ru.tinkoff.kora.common.DefaultComponent;

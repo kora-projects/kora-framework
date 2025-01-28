@@ -77,6 +77,11 @@ class CacheRunner {
                     return CompletableFuture.completedFuture(true)
                 }
 
+                override fun psetex(keyAndValue: MutableMap<ByteArray, ByteArray>, expireAfterMillis: Long): CompletionStage<Boolean> {
+                    mset(keyAndValue)
+                    return CompletableFuture.completedFuture(true)
+                }
+
                 override fun psetex(key: ByteArray, value: ByteArray, expireAfterMillis: Long): CompletionStage<Boolean> {
                     return set(key, value)
                 }
@@ -98,10 +103,6 @@ class CacheRunner {
                     cache.clear()
                     return CompletableFuture.completedFuture(true)
                 }
-
-                override fun init() { }
-
-                override fun release() { }
             }
         }
     }

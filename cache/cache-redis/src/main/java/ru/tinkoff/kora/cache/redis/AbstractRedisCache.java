@@ -1,6 +1,8 @@
 package ru.tinkoff.kora.cache.redis;
 
 import jakarta.annotation.Nonnull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.tinkoff.kora.cache.AsyncCache;
 
 import java.nio.charset.StandardCharsets;
@@ -12,6 +14,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public abstract class AbstractRedisCache<K, V> implements AsyncCache<K, V> {
+
+    private static final Logger logger = LoggerFactory.getLogger(RedisCache.class);
 
     private final String name;
     private final RedisCacheClient redisClient;
@@ -42,7 +46,7 @@ public abstract class AbstractRedisCache<K, V> implements AsyncCache<K, V> {
             ? null
             : config.expireAfterWrite().toMillis();
 
-        if(config.keyPrefix().isEmpty()) {
+        if (config.keyPrefix().isEmpty()) {
             this.keyPrefix = null;
         } else {
             var prefixRaw = config.keyPrefix().getBytes(StandardCharsets.UTF_8);
@@ -193,7 +197,9 @@ public abstract class AbstractRedisCache<K, V> implements AsyncCache<K, V> {
                 : redisClient.getex(keyAsBytes, expireAfterAccessMillis).toCompletableFuture().join();
 
             fromCache = valueMapper.read(jsonAsBytes);
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
 
         if (fromCache != null) {
             telemetryContext.recordSuccess();
@@ -211,7 +217,9 @@ public abstract class AbstractRedisCache<K, V> implements AsyncCache<K, V> {
                     } else {
                         redisClient.psetex(keyAsBytes, valueAsBytes, expireAfterWriteMillis).toCompletableFuture().join();
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
             }
 
             telemetryContext.recordSuccess();
@@ -252,7 +260,9 @@ public abstract class AbstractRedisCache<K, V> implements AsyncCache<K, V> {
                     }
                 });
             }
-        } catch (Exception ignored) {}
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+        }
 
         if (fromCache.size() == keys.size()) {
             telemetryContext.recordSuccess();
@@ -279,7 +289,9 @@ public abstract class AbstractRedisCache<K, V> implements AsyncCache<K, V> {
                     } else {
                         redisClient.psetex(keyAndValuesAsBytes, expireAfterWriteMillis).toCompletableFuture().join();
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception e) {
+                    logger.error(e.getMessage(), e);
+                }
             }
 
             telemetryContext.recordSuccess();
@@ -637,7 +649,7 @@ public abstract class AbstractRedisCache<K, V> implements AsyncCache<K, V> {
 
     private byte[] mapKey(K key) {
         final byte[] suffixAsBytes = keyMapper.apply(key);
-        if(this.keyPrefix == null) {
+        if (this.keyPrefix == null) {
             return suffixAsBytes;
         } else {
             var keyAsBytes = new byte[keyPrefix.length + suffixAsBytes.length];
