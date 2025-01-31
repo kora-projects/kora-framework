@@ -2,8 +2,6 @@ package ru.tinkoff.kora.config.annotation.processor;
 
 import com.squareup.javapoet.*;
 import jakarta.annotation.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import ru.tinkoff.kora.annotation.processor.common.*;
 import ru.tinkoff.kora.common.util.Either;
 
@@ -336,7 +334,7 @@ public class ConfigParserGenerator {
     private MethodSpec buildConstructor(TypeSpec.Builder parser, List<ConfigUtils.ConfigField> fields) {
         var constructor = MethodSpec.constructorBuilder()
             .addModifiers(Modifier.PUBLIC);
-        var fieldFactory = new FieldFactory(this.types, elements, parser, constructor, "extractor");
+        var fieldFactory = new FieldFactory(this.types, elements, null, constructor, "extractor");
         for (var field : fields) {
             var isSupported = field.mapping() == null &&
                 (ConfigUtils.isSupportedType(field.typeName())

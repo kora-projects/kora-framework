@@ -90,8 +90,12 @@ public class CommonUtils {
     }
 
     public static boolean hasDefaultConstructorAndFinal(Types types, TypeMirror typeMirror) {
-        var typeElement = (TypeElement) types.asElement(typeMirror);
-        return hasDefaultConstructorAndFinal(typeElement);
+        var typeElement = types.asElement(typeMirror);
+        if (typeElement instanceof TypeElement te) {
+            return hasDefaultConstructorAndFinal(te);
+        } else {
+            return false;
+        }
     }
 
     public static boolean hasDefaultConstructorAndFinal(TypeElement typeElement) {
