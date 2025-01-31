@@ -2,7 +2,7 @@ package ru.tinkoff.kora.micrometer.module.jms.consumer;
 
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import ru.tinkoff.kora.jms.telemetry.JmsConsumerMetrics;
 import ru.tinkoff.kora.jms.telemetry.JmsConsumerMetricsFactory;
 import ru.tinkoff.kora.telemetry.common.TelemetryConfig;
@@ -20,9 +20,8 @@ public class MicrometerJmsConsumerMetricsFactory implements JmsConsumerMetricsFa
         var builder = DistributionSummary.builder("messaging.receive.duration")
             .serviceLevelObjectives(config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V123))
             .baseUnit("s")
-            .tag(SemanticAttributes.MESSAGING_SYSTEM.getKey(), "jms")
-            .tag(SemanticAttributes.MESSAGING_DESTINATION_NAME.getKey(), queueName)
-            .tag(SemanticAttributes.MESSAGING_DESTINATION_KIND.getKey(), "queue");
+            .tag(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), MessagingIncubatingAttributes.MessagingSystemValues.JMS)
+            .tag(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME.getKey(), queueName);
 
         var distributionSummary = builder.register(this.meterRegistry);
         return new MicrometerJmsConsumerMetrics(distributionSummary);

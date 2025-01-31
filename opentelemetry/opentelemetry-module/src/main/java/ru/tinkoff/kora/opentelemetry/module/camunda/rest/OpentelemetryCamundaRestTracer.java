@@ -5,7 +5,9 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.TextMapGetter;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
 import ru.tinkoff.kora.camunda.rest.telemetry.CamundaRestTracer;
 import ru.tinkoff.kora.common.Context;
 import ru.tinkoff.kora.http.common.HttpResultCode;
@@ -53,11 +55,11 @@ public final class OpentelemetryCamundaRestTracer implements CamundaRestTracer {
             .spanBuilder(method + " " + pathTemplate)
             .setSpanKind(SpanKind.SERVER)
             .setParent(parentCtx)
-            .setAttribute(SemanticAttributes.HTTP_REQUEST_METHOD, method)
-            .setAttribute(SemanticAttributes.URL_SCHEME, scheme)
-            .setAttribute(SemanticAttributes.SERVER_ADDRESS, host)
-            .setAttribute(SemanticAttributes.URL_PATH, path)
-            .setAttribute(SemanticAttributes.HTTP_ROUTE, pathTemplate)
+            .setAttribute(HttpAttributes.HTTP_REQUEST_METHOD, method)
+            .setAttribute(UrlAttributes.URL_SCHEME, scheme)
+            .setAttribute(ServerAttributes.SERVER_ADDRESS, host)
+            .setAttribute(UrlAttributes.URL_PATH, path)
+            .setAttribute(HttpAttributes.HTTP_ROUTE, pathTemplate)
             .startSpan();
 
         OpentelemetryContext.set(context, OpentelemetryContext.get(context).add(span));
@@ -71,7 +73,7 @@ public final class OpentelemetryCamundaRestTracer implements CamundaRestTracer {
                 span.recordException(exception);
             }
             if (statusCode >= 0) {
-                span.setAttribute(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE, statusCode);
+                span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, statusCode);
             }
             span.end();
         };

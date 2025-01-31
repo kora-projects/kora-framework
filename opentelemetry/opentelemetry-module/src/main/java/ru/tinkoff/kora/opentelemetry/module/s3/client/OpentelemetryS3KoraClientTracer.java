@@ -4,7 +4,8 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.incubating.AwsIncubatingAttributes;
+import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.opentelemetry.common.OpentelemetryContext;
 import ru.tinkoff.kora.s3.client.telemetry.S3KoraClientTracer;
@@ -40,12 +41,12 @@ public final class OpentelemetryS3KoraClientTracer implements S3KoraClientTracer
 
         span.setAttribute(CLIENT_NAME, client.getSimpleName());
         span.setAttribute(OPERATION_NAME, operation);
-        span.setAttribute(SemanticAttributes.AWS_S3_BUCKET, bucket);
+        span.setAttribute(AwsIncubatingAttributes.AWS_S3_BUCKET, bucket);
         if (key != null) {
-            span.setAttribute(SemanticAttributes.AWS_S3_KEY, key);
+            span.setAttribute(AwsIncubatingAttributes.AWS_S3_KEY, key);
         }
         if (contentLength != null) {
-            span.setAttribute(SemanticAttributes.HTTP_REQUEST_BODY_SIZE, contentLength);
+            span.setAttribute(HttpIncubatingAttributes.HTTP_REQUEST_BODY_SIZE, contentLength);
         }
 
         return exception -> {

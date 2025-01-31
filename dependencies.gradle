@@ -42,6 +42,7 @@ dependencyResolutionManagement { DependencyResolutionManagement it ->
             library('opentelemetry-context', 'io.opentelemetry', 'opentelemetry-context').versionRef('opentelemetry')
             library('opentelemetry-api', 'io.opentelemetry', 'opentelemetry-api').versionRef('opentelemetry')
             library('opentelemetry-semconv', 'io.opentelemetry.semconv', 'opentelemetry-semconv').version('1.25.0-alpha')
+            library('opentelemetry-semconv-incubating', 'io.opentelemetry.semconv', 'opentelemetry-semconv-incubating').version('1.25.0-alpha')
             library('opentelemetry-exporter-sender-jdk', 'io.opentelemetry', 'opentelemetry-exporter-sender-jdk').version('1.37.0-alpha')
             library('opentelemetry-exporter-otlp', 'io.opentelemetry', 'opentelemetry-exporter-otlp').versionRef('opentelemetry')
 

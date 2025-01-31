@@ -3,5 +3,6 @@ dependencies {
     api project(':logging:logging-common')
     api libs.opentelemetry.context
     api libs.opentelemetry.semconv
+    api libs.opentelemetry.semconv.incubating
     api libs.opentelemetry.api
 }

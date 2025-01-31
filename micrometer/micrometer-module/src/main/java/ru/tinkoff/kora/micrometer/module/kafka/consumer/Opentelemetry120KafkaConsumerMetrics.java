@@ -4,21 +4,18 @@ import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.kafka.common.Metric;
-import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.TopicPartition;
 import ru.tinkoff.kora.application.graph.Lifecycle;
 import ru.tinkoff.kora.kafka.common.consumer.telemetry.KafkaConsumerMetrics;
 import ru.tinkoff.kora.telemetry.common.TelemetryConfig;
 
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,10 +53,10 @@ public class Opentelemetry120KafkaConsumerMetrics implements KafkaConsumerMetric
         var builder = DistributionSummary.builder("messaging.receive.duration")
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V120))
             .baseUnit("milliseconds")
-            .tag(SemanticAttributes.MESSAGING_SYSTEM.getKey(), "kafka")
-            .tag(SemanticAttributes.MESSAGING_DESTINATION_NAME.getKey(), key.topic())
-            .tag(SemanticAttributes.MESSAGING_CLIENT_ID.getKey(), Objects.requireNonNullElse(clientId, "").toString())
-            .tag(SemanticAttributes.MESSAGING_KAFKA_CONSUMER_GROUP.getKey(), Objects.requireNonNullElse(groupId, "").toString());
+            .tag(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), MessagingIncubatingAttributes.MessagingSystemValues.KAFKA)
+            .tag(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME.getKey(), key.topic())
+            .tag(MessagingIncubatingAttributes.MESSAGING_CLIENT_ID.getKey(), Objects.requireNonNullElse(clientId, "").toString())
+            .tag(MessagingIncubatingAttributes.MESSAGING_KAFKA_CONSUMER_GROUP.getKey(), Objects.requireNonNullElse(groupId, "").toString());
 
         return builder.register(this.meterRegistry);
     }
@@ -71,11 +68,11 @@ public class Opentelemetry120KafkaConsumerMetrics implements KafkaConsumerMetric
         var builder = DistributionSummary.builder("messaging.process.batch.duration")
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V120))
             .baseUnit("milliseconds")
-            .tag(SemanticAttributes.MESSAGING_SYSTEM.getKey(), "kafka")
+            .tag(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), "kafka")
             .tag(MESSAGING_KAFKA_CONSUMER_NAME.getKey(), key.consumerName())
-            .tag(SemanticAttributes.MESSAGING_OPERATION.getKey(), key.consumerName())
-            .tag(SemanticAttributes.MESSAGING_CLIENT_ID.getKey(), Objects.requireNonNullElse(clientId, "").toString())
-            .tag(SemanticAttributes.MESSAGING_KAFKA_CONSUMER_GROUP.getKey(), Objects.requireNonNullElse(groupId, "").toString());
+            .tag(MessagingIncubatingAttributes.MESSAGING_OPERATION.getKey(), key.consumerName())
+            .tag(MessagingIncubatingAttributes.MESSAGING_CLIENT_ID.getKey(), Objects.requireNonNullElse(clientId, "").toString())
+            .tag(MessagingIncubatingAttributes.MESSAGING_KAFKA_CONSUMER_GROUP.getKey(), Objects.requireNonNullElse(groupId, "").toString());
 
         return builder.register(this.meterRegistry);
     }
@@ -135,12 +132,14 @@ public class Opentelemetry120KafkaConsumerMetrics implements KafkaConsumerMetric
         private final Gauge gauge;
         private volatile long offsetLag;
 
+        @SuppressWarnings("deprecation")
         private LagGauge(String consumerName, TopicPartition partition, MeterRegistry meterRegistry) {
             gauge = Gauge.builder("messaging.kafka.consumer.lag", () -> offsetLag)
-                .tag(SemanticAttributes.MESSAGING_SYSTEM.getKey(), "kafka")
+                .tag(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), "kafka")
                 .tag(MESSAGING_KAFKA_CONSUMER_NAME.getKey(), consumerName)
-                .tag(SemanticAttributes.MESSAGING_DESTINATION_NAME.getKey(), partition.topic())
-                .tag(SemanticAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION.getKey(), Objects.toString(partition.partition()))
+                .tag(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME.getKey(), partition.topic())
+                .tag(MessagingIncubatingAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION.getKey(), Objects.toString(partition.partition()))
+                .tag(MessagingIncubatingAttributes.MESSAGING_DESTINATION_PARTITION_ID.getKey(), Objects.toString(partition.partition()))
                 .register(meterRegistry);
         }
     }

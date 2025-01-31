@@ -3,7 +3,7 @@ package ru.tinkoff.kora.opentelemetry.module.db;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.incubating.DbIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.common.Context;
 import ru.tinkoff.kora.database.common.QueryContext;
@@ -26,16 +26,16 @@ public final class OpentelemetryDataBaseTracer implements DataBaseTracer {
 
     private static String toDbSystem(String type) {
         return switch (type) {
-            case "as400", "db2" -> SemanticAttributes.DbSystemValues.DB2;
-            case "derby" -> SemanticAttributes.DbSystemValues.DERBY;
-            case "h2" -> SemanticAttributes.DbSystemValues.H2;
+            case "as400", "db2" -> DbIncubatingAttributes.DbSystemValues.DB2;
+            case "derby" -> DbIncubatingAttributes.DbSystemValues.DERBY;
+            case "h2" -> DbIncubatingAttributes.DbSystemValues.H2;
             case "hsqldb" -> "hsqldb";
-            case "mariadb" -> SemanticAttributes.DbSystemValues.MARIADB;
-            case "mysql" -> SemanticAttributes.DbSystemValues.MYSQL;
-            case "oracle" -> SemanticAttributes.DbSystemValues.ORACLE;
-            case "postgresql", "postgres" -> SemanticAttributes.DbSystemValues.POSTGRESQL;
-            case "jtds", "microsoft", "sqlserver" -> SemanticAttributes.DbSystemValues.MSSQL;
-            default -> SemanticAttributes.DbSystemValues.OTHER_SQL;
+            case "mariadb" -> DbIncubatingAttributes.DbSystemValues.MARIADB;
+            case "mysql" -> DbIncubatingAttributes.DbSystemValues.MYSQL;
+            case "oracle" -> DbIncubatingAttributes.DbSystemValues.ORACLE;
+            case "postgresql", "postgres" -> DbIncubatingAttributes.DbSystemValues.POSTGRESQL;
+            case "jtds", "microsoft", "sqlserver" -> DbIncubatingAttributes.DbSystemValues.MSSQL;
+            default -> DbIncubatingAttributes.DbSystemValues.OTHER_SQL;
         };
     }
 
@@ -45,11 +45,12 @@ public final class OpentelemetryDataBaseTracer implements DataBaseTracer {
         var builder = this.tracer.spanBuilder(queryContext.operation())
             .setSpanKind(SpanKind.CLIENT)
             .setParent(otctx.getContext())
-            .setAttribute(SemanticAttributes.DB_SYSTEM, this.dbSystem)
-            .setAttribute(SemanticAttributes.DB_USER, this.user)
-            .setAttribute(SemanticAttributes.DB_STATEMENT, queryContext.queryId());
+            .setAttribute(DbIncubatingAttributes.DB_SYSTEM, this.dbSystem)
+            .setAttribute(DbIncubatingAttributes.DB_USER, this.user)
+            .setAttribute(DbIncubatingAttributes.DB_STATEMENT, queryContext.queryId());
         if (this.connectionString != null) {
-            builder.setAttribute(SemanticAttributes.DB_CONNECTION_STRING, this.connectionString);
+            @SuppressWarnings("deprecation")
+            var ignore = builder.setAttribute(DbIncubatingAttributes.DB_CONNECTION_STRING, this.connectionString);
         }
         var span = builder.startSpan();
         OpentelemetryContext.set(ctx, otctx.add(span));
@@ -70,12 +71,13 @@ public final class OpentelemetryDataBaseTracer implements DataBaseTracer {
         var builder = this.tracer.spanBuilder(queryContext.operation())
             .setSpanKind(SpanKind.CLIENT)
             .setParent(otctx.getContext())
-            .setAttribute(SemanticAttributes.DB_SYSTEM, this.dbSystem)
-            .setAttribute(SemanticAttributes.DB_USER, this.user)
-            .setAttribute(SemanticAttributes.DB_STATEMENT, queryContext.queryId());
+            .setAttribute(DbIncubatingAttributes.DB_SYSTEM, this.dbSystem)
+            .setAttribute(DbIncubatingAttributes.DB_USER, this.user)
+            .setAttribute(DbIncubatingAttributes.DB_STATEMENT, queryContext.queryId());
 
         if (this.connectionString != null) {
-            builder.setAttribute(SemanticAttributes.DB_CONNECTION_STRING, this.connectionString);
+            @SuppressWarnings("deprecation")
+            var ignore = builder.setAttribute(DbIncubatingAttributes.DB_CONNECTION_STRING, this.connectionString);
         }
         var span = builder.startSpan();
         OpentelemetryContext.set(ctx, otctx.add(span));

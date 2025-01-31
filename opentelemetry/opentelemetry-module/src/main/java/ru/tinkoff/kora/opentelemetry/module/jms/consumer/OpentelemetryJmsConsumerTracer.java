@@ -5,7 +5,7 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.TextMapGetter;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.common.Context;
 import ru.tinkoff.kora.jms.telemetry.JmsConsumerTracer;
@@ -29,13 +29,10 @@ public class OpentelemetryJmsConsumerTracer implements JmsConsumerTracer {
     public JmsConsumerSpan get(Message message) throws JMSException {
         var destination = message.getJMSDestination();
         var destinationString = "unknown";
-        var destinationKind = "unknown";
         if (destination instanceof Queue queue) {
             destinationString = queue.getQueueName();
-            destinationKind = "queue";
         } else if (destination instanceof Topic topic) {
             destinationString = topic.getTopicName();
-            destinationKind = "topic";
         }
         var root = io.opentelemetry.context.Context.root();
         var parent = W3CTraceContextPropagator.getInstance().extract(root, message, MessageTextMapGetter.INSTANCE);
@@ -44,10 +41,9 @@ public class OpentelemetryJmsConsumerTracer implements JmsConsumerTracer {
         var recordSpanBuilder = this.tracer
             .spanBuilder(destinationString + " receive")
             .setSpanKind(SpanKind.CONSUMER)
-            .setAttribute(SemanticAttributes.MESSAGING_SYSTEM, "jms")
-            .setAttribute(SemanticAttributes.MESSAGING_DESTINATION_NAME, destinationString)
-            .setAttribute(SemanticAttributes.MESSAGING_DESTINATION_KIND, destinationKind)
-            .setAttribute(SemanticAttributes.MESSAGING_MESSAGE_ID, message.getJMSMessageID());
+            .setAttribute(MessagingIncubatingAttributes.MESSAGING_SYSTEM, MessagingIncubatingAttributes.MessagingSystemValues.JMS)
+            .setAttribute(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME, destinationString)
+            .setAttribute(MessagingIncubatingAttributes.MESSAGING_MESSAGE_ID, message.getJMSMessageID());
 
         if (parent != root) {
             recordSpanBuilder.setParent(parent);

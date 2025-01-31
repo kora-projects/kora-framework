@@ -3,7 +3,7 @@ package ru.tinkoff.kora.opentelemetry.module.scheduling;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.incubating.CodeIncubatingAttributes;
 import ru.tinkoff.kora.common.Context;
 import ru.tinkoff.kora.opentelemetry.common.OpentelemetryContext;
 import ru.tinkoff.kora.scheduling.common.telemetry.SchedulingTracer;
@@ -26,8 +26,8 @@ public class OpentelemetrySchedulingTracer implements SchedulingTracer {
         var span = this.tracer
             .spanBuilder(this.className + " " + this.methodName)
             .setSpanKind(SpanKind.INTERNAL)
-            .setAttribute(SemanticAttributes.CODE_FUNCTION, this.methodName)
-            .setAttribute(SemanticAttributes.CODE_FILEPATH, this.className)
+            .setAttribute(CodeIncubatingAttributes.CODE_FUNCTION, this.methodName)
+            .setAttribute(CodeIncubatingAttributes.CODE_FILEPATH, this.className)
             .startSpan();
         OpentelemetryContext.set(context, OpentelemetryContext.get(context).add(span));
 

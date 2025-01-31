@@ -4,7 +4,7 @@ import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.ErrorAttributes;
 import jakarta.annotation.Nullable;
 import org.camunda.bpm.engine.delegate.DelegateExecution;
 import ru.tinkoff.kora.camunda.engine.bpmn.telemetry.CamundaEngineBpmnMetrics;
@@ -72,9 +72,9 @@ public final class Micrometer120CamundaEngineBpmnMetrics implements CamundaEngin
     private DistributionSummary requestDuration(Key key) {
         var list = new ArrayList<Tag>(3);
         if (key.errorType() != null) {
-            list.add(Tag.of(SemanticAttributes.ERROR_TYPE.getKey(), key.errorType().getCanonicalName()));
+            list.add(Tag.of(ErrorAttributes.ERROR_TYPE.getKey(), key.errorType().getCanonicalName()));
         } else {
-            list.add(Tag.of(SemanticAttributes.ERROR_TYPE.getKey(), ""));
+            list.add(Tag.of(ErrorAttributes.ERROR_TYPE.getKey(), ""));
         }
 
         list.add(Tag.of("delegate", key.javaDelegateName()));

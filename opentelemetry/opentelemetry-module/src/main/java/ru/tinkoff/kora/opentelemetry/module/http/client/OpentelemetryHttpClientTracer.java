@@ -4,7 +4,9 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
 import ru.tinkoff.kora.common.Context;
 import ru.tinkoff.kora.http.client.common.request.HttpClientRequest;
 import ru.tinkoff.kora.http.client.common.telemetry.HttpClientTracer;
@@ -48,12 +50,12 @@ public final class OpentelemetryHttpClientTracer implements HttpClientTracer {
             }
         }
 
-        builder.setAttribute(SemanticAttributes.HTTP_REQUEST_METHOD, request.method());
+        builder.setAttribute(HttpAttributes.HTTP_REQUEST_METHOD, request.method());
         if (targetUri != null) {
-            builder.setAttribute(SemanticAttributes.SERVER_ADDRESS, targetUri.getHost());
-            builder.setAttribute(SemanticAttributes.SERVER_PORT, (long) targetUri.getPort());
-            builder.setAttribute(SemanticAttributes.URL_SCHEME, targetUri.getScheme());
-            builder.setAttribute(SemanticAttributes.URL_FULL, targetUri.toString());
+            builder.setAttribute(ServerAttributes.SERVER_ADDRESS, targetUri.getHost());
+            builder.setAttribute(ServerAttributes.SERVER_PORT, (long) targetUri.getPort());
+            builder.setAttribute(UrlAttributes.URL_SCHEME, targetUri.getScheme());
+            builder.setAttribute(UrlAttributes.URL_FULL, targetUri.toString());
         }
         var span = builder.startSpan();
 
@@ -65,7 +67,7 @@ public final class OpentelemetryHttpClientTracer implements HttpClientTracer {
             @Override
             public void close(Integer statusCode, HttpResultCode resultCode, HttpHeaders headers, Throwable exception) {
                 int code = statusCode == null ? -1 : statusCode;
-                span.setAttribute(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE, code);
+                span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, code);
                 if (exception != null) {
                     span.setAttribute("http.response.result_code", resultCode.string());
                     span.recordException(exception);

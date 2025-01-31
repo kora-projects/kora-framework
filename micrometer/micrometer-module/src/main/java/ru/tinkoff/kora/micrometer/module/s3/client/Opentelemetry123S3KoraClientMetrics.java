@@ -3,6 +3,7 @@ package ru.tinkoff.kora.micrometer.module.s3.client;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.semconv.incubating.AwsIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.s3.client.S3Exception;
 import ru.tinkoff.kora.s3.client.telemetry.S3KoraClientMetrics;
@@ -12,7 +13,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.opentelemetry.api.common.AttributeKey.stringKey;
-import static io.opentelemetry.semconv.SemanticAttributes.AWS_S3_BUCKET;
 
 public class Opentelemetry123S3KoraClientMetrics implements S3KoraClientMetrics {
 
@@ -46,7 +46,7 @@ public class Opentelemetry123S3KoraClientMetrics implements S3KoraClientMetrics 
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V123))
             .baseUnit("s")
             .tag(CLIENT_NAME.getKey(), client.getSimpleName())
-            .tag(AWS_S3_BUCKET.getKey(), key.bucket())
+            .tag(AwsIncubatingAttributes.AWS_S3_BUCKET.getKey(), key.bucket())
             .tag("aws.operation.name", key.operation())
             .tag(ERROR_CODE.getKey(), Objects.requireNonNullElse(key.errorCode(), ""));
 

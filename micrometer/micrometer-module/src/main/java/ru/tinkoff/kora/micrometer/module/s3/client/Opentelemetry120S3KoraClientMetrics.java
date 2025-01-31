@@ -2,20 +2,17 @@ package ru.tinkoff.kora.micrometer.module.s3.client;
 
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
 import io.opentelemetry.api.common.AttributeKey;
+import io.opentelemetry.semconv.incubating.AwsIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.s3.client.S3Exception;
 import ru.tinkoff.kora.s3.client.telemetry.S3KoraClientMetrics;
 import ru.tinkoff.kora.telemetry.common.TelemetryConfig;
 
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.opentelemetry.api.common.AttributeKey.stringKey;
-import static io.opentelemetry.semconv.SemanticAttributes.AWS_S3_BUCKET;
-import static io.opentelemetry.semconv.SemanticAttributes.AWS_S3_KEY;
 
 public class Opentelemetry120S3KoraClientMetrics implements S3KoraClientMetrics {
 
@@ -49,7 +46,7 @@ public class Opentelemetry120S3KoraClientMetrics implements S3KoraClientMetrics 
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V120))
             .baseUnit("milliseconds")
             .tag(CLIENT_NAME.getKey(), client.getSimpleName())
-            .tag(AWS_S3_BUCKET.getKey(), key.bucket())
+            .tag(AwsIncubatingAttributes.AWS_S3_BUCKET.getKey(), key.bucket())
             .tag("aws.operation.name", key.operation())
             .tag(ERROR_CODE.getKey(), Objects.requireNonNullElse(key.errorCode(), ""));
 

@@ -4,7 +4,7 @@ import io.grpc.Status;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.incubating.MessageIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.grpc.server.telemetry.GrpcServerTracer;
 
@@ -33,8 +33,8 @@ public final class OpentelemetryGrpcServerSpan implements GrpcServerTracer.GrpcS
         this.span.addEvent(
             "message",
             Attributes.of(
-                SemanticAttributes.MESSAGE_TYPE, "SENT",
-                SemanticAttributes.MESSAGE_ID, sentCounter.incrementAndGet()
+                MessageIncubatingAttributes.MESSAGE_TYPE, "SENT",
+                MessageIncubatingAttributes.MESSAGE_ID, sentCounter.incrementAndGet()
             )
         );
     }
@@ -44,8 +44,8 @@ public final class OpentelemetryGrpcServerSpan implements GrpcServerTracer.GrpcS
         this.span.addEvent(
             "message",
             Attributes.of(
-                SemanticAttributes.MESSAGE_TYPE, "RECEIVED",
-                SemanticAttributes.MESSAGE_ID, receivedCounter.incrementAndGet()
+                MessageIncubatingAttributes.MESSAGE_TYPE, "RECEIVED",
+                MessageIncubatingAttributes.MESSAGE_ID, receivedCounter.incrementAndGet()
             )
         );
     }

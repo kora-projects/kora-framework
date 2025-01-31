@@ -3,7 +3,10 @@ package ru.tinkoff.kora.micrometer.module.camunda.rest;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
+import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.camunda.rest.telemetry.CamundaRestMetrics;
 import ru.tinkoff.kora.http.common.HttpResultCode;
@@ -54,29 +57,31 @@ public final class Micrometer120CamundaRestMetrics implements CamundaRestMetrics
         this.duration.computeIfAbsent(key, this::requestDuration).record(((double) processingTimeNanos) / 1_000_000);
     }
 
+    @SuppressWarnings("deprecation")
     private void registerActiveRequestsGauge(ActiveRequestsKey key, AtomicInteger counter) {
         Gauge.builder("camunda.rest.server.active_requests", counter, AtomicInteger::get)
-            .tags(SemanticAttributes.HTTP_ROUTE.getKey(), key.target())
-            .tags(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
-            .tags(SemanticAttributes.SERVER_ADDRESS.getKey(), key.host())
-            .tags(SemanticAttributes.URL_SCHEME.getKey(), key.scheme())
-            .tags(SemanticAttributes.HTTP_TARGET.getKey(), key.target())
-            .tags(SemanticAttributes.HTTP_METHOD.getKey(), key.method())
+            .tags(HttpAttributes.HTTP_ROUTE.getKey(), key.target())
+            .tags(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
+            .tags(ServerAttributes.SERVER_ADDRESS.getKey(), key.host())
+            .tags(UrlAttributes.URL_SCHEME.getKey(), key.scheme())
+            .tags(HttpIncubatingAttributes.HTTP_TARGET.getKey(), key.target())
+            .tags(HttpIncubatingAttributes.HTTP_METHOD.getKey(), key.method())
             .register(this.meterRegistry);
     }
 
+    @SuppressWarnings("deprecation")
     private DistributionSummary requestDuration(DurationKey key) {
         return DistributionSummary.builder("camunda.rest.server.duration")
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V120))
             .baseUnit("milliseconds")
-            .tags(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
-            .tags(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
-            .tags(SemanticAttributes.HTTP_ROUTE.getKey(), key.route())
-            .tags(SemanticAttributes.SERVER_ADDRESS.getKey(), key.host())
-            .tags(SemanticAttributes.URL_SCHEME.getKey(), key.scheme())
-            .tags(SemanticAttributes.HTTP_TARGET.getKey(), key.route())
-            .tags(SemanticAttributes.HTTP_METHOD.getKey(), key.method())
-            .tags(SemanticAttributes.HTTP_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
+            .tags(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
+            .tags(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
+            .tags(HttpAttributes.HTTP_ROUTE.getKey(), key.route())
+            .tags(ServerAttributes.SERVER_ADDRESS.getKey(), key.host())
+            .tags(UrlAttributes.URL_SCHEME.getKey(), key.scheme())
+            .tags(HttpIncubatingAttributes.HTTP_TARGET.getKey(), key.route())
+            .tags(HttpIncubatingAttributes.HTTP_METHOD.getKey(), key.method())
+            .tags(HttpIncubatingAttributes.HTTP_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
             .register(this.meterRegistry);
     }
 }

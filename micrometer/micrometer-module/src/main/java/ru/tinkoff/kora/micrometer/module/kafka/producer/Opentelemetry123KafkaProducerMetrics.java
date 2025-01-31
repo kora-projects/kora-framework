@@ -3,7 +3,8 @@ package ru.tinkoff.kora.micrometer.module.kafka.producer;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.kafka.KafkaClientMetrics;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.ErrorAttributes;
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -80,20 +81,23 @@ public class Opentelemetry123KafkaProducerMetrics implements KafkaProducerMetric
 
     private DistributionSummary metrics(DurationKey key) {
         var clientId = this.properties.get(ProducerConfig.CLIENT_ID_CONFIG);
+        var partitionString = Integer.toString(key.partition());
 
+        @SuppressWarnings("deprecation")
         var builder = DistributionSummary.builder("messaging.publish.duration")
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V123))
             .baseUnit("s")
-            .tag(SemanticAttributes.MESSAGING_SYSTEM.getKey(), "kafka")
-            .tag(SemanticAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION.getKey(), Integer.toString(key.partition()))
-            .tag(SemanticAttributes.MESSAGING_DESTINATION_NAME.getKey(), key.topic())
-            .tag(SemanticAttributes.MESSAGING_CLIENT_ID.getKey(), Objects.requireNonNullElse(clientId, "").toString());
+            .tag(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), "kafka")
+            .tag(MessagingIncubatingAttributes.MESSAGING_DESTINATION_PARTITION_ID.getKey(), partitionString)
+            .tag(MessagingIncubatingAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION.getKey(), partitionString)
+            .tag(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME.getKey(), key.topic())
+            .tag(MessagingIncubatingAttributes.MESSAGING_CLIENT_ID.getKey(), Objects.requireNonNullElse(clientId, "").toString());
 
         var errorType = key.errorType();
         if (errorType != null) {
-            builder.tag(SemanticAttributes.ERROR_TYPE.getKey(), errorType.getCanonicalName());
+            builder.tag(ErrorAttributes.ERROR_TYPE.getKey(), errorType.getCanonicalName());
         } else {
-            builder.tag(SemanticAttributes.ERROR_TYPE.getKey(), "");
+            builder.tag(ErrorAttributes.ERROR_TYPE.getKey(), "");
         }
 
         return builder.register(this.meterRegistry);

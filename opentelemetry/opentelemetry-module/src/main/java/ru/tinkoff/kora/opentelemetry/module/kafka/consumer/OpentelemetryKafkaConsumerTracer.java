@@ -6,7 +6,7 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.TextMapGetter;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -36,20 +36,22 @@ public final class OpentelemetryKafkaConsumerTracer implements KafkaConsumerTrac
         var spans = new HashMap<TopicPartition, Span>(partitions.size());
         var rootSpan = this.tracer.spanBuilder("kafka.poll")
             .setSpanKind(SpanKind.CONSUMER)
-            .setAttribute(SemanticAttributes.MESSAGING_SYSTEM, "kafka")
+            .setAttribute(MessagingIncubatingAttributes.MESSAGING_SYSTEM, MessagingIncubatingAttributes.MessagingSystemValues.KAFKA)
             .setNoParent()
             .startSpan();
         var rootCtx = otctx.add(rootSpan);
         for (var topicPartition : partitions) {
+            @SuppressWarnings("deprecation")
             var partitionSpan = this.tracer
                 .spanBuilder(topicPartition.topic() + " receive")
                 .setParent(rootCtx.getContext())
                 .setSpanKind(SpanKind.CONSUMER)
-                .setAttribute(SemanticAttributes.MESSAGING_SYSTEM, "kafka")
-                .setAttribute(SemanticAttributes.MESSAGING_OPERATION, SemanticAttributes.MessagingOperationValues.RECEIVE)
-                .setAttribute(SemanticAttributes.MESSAGING_DESTINATION_NAME, topicPartition.topic())
-                .setAttribute(SemanticAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION, (long) topicPartition.partition())
-                .setAttribute(SemanticAttributes.MESSAGING_BATCH_MESSAGE_COUNT, (long) records.count())
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_SYSTEM, "kafka")
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_OPERATION, MessagingIncubatingAttributes.MessagingOperationValues.RECEIVE)
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME, topicPartition.topic())
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION, (long) topicPartition.partition())
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_DESTINATION_PARTITION_ID, String.valueOf(topicPartition.partition()))
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_BATCH_MESSAGE_COUNT, (long) records.count())
                 .startSpan();
             spans.put(topicPartition, partitionSpan);
         }
@@ -77,17 +79,19 @@ public final class OpentelemetryKafkaConsumerTracer implements KafkaConsumerTrac
             var root = io.opentelemetry.context.Context.root();
             var parent = W3CTraceContextPropagator.getInstance().extract(root, record, ConsumerRecordTextMapGetter.INSTANCE);
 
+            @SuppressWarnings("deprecation")
             var recordSpanBuilder = this.tracer
                 .spanBuilder(record.topic() + " process")
                 .setSpanKind(SpanKind.CONSUMER)
                 .setParent(parent)
                 .addLink(partitionSpan.getSpanContext())
-                .setAttribute(SemanticAttributes.MESSAGING_SYSTEM, "kafka")
-                .setAttribute(SemanticAttributes.MESSAGING_DESTINATION_NAME, record.topic())
-                .setAttribute(SemanticAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION, (long) record.partition())
-                .setAttribute(SemanticAttributes.MESSAGING_KAFKA_MESSAGE_OFFSET, record.offset());
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_SYSTEM, "kafka")
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME, record.topic())
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION, (long) record.partition())
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_DESTINATION_PARTITION_ID, String.valueOf(record.partition()))
+                .setAttribute(MessagingIncubatingAttributes.MESSAGING_KAFKA_MESSAGE_OFFSET, record.offset());
             try {
-                recordSpanBuilder.setAttribute(SemanticAttributes.MESSAGING_KAFKA_MESSAGE_KEY, Objects.toString(record.key()));
+                recordSpanBuilder.setAttribute(MessagingIncubatingAttributes.MESSAGING_KAFKA_MESSAGE_KEY, Objects.toString(record.key()));
             } catch (Exception ignore) {}
             var recordSpan = recordSpanBuilder.startSpan();
             OpentelemetryContext.set(Context.current(), this.rootCtx.add(recordSpan));

@@ -6,7 +6,8 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.TextMapSetter;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.ErrorAttributes;
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -30,9 +31,9 @@ public class OpentelemetryKafkaProducerTracer implements KafkaProducerTracer {
         var span = this.tracer.spanBuilder(record.topic() + " send")
             .setSpanKind(SpanKind.PRODUCER)
             .setParent(otctx.getContext())
-            .setAttribute(SemanticAttributes.MESSAGING_SYSTEM, "kafka")
-            .setAttribute(SemanticAttributes.MESSAGING_OPERATION, SemanticAttributes.MessagingOperationValues.PUBLISH)
-            .setAttribute(SemanticAttributes.MESSAGING_DESTINATION_NAME, record.topic())
+            .setAttribute(MessagingIncubatingAttributes.MESSAGING_SYSTEM, "kafka")
+            .setAttribute(MessagingIncubatingAttributes.MESSAGING_OPERATION, MessagingIncubatingAttributes.MessagingOperationValues.PUBLISH)
+            .setAttribute(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME, record.topic())
             .startSpan();
         W3CTraceContextPropagator.getInstance().inject(otctx.getContext().with(span), record, ProducerRecordTextMapSetter.INSTANCE);
 
@@ -46,7 +47,7 @@ public class OpentelemetryKafkaProducerTracer implements KafkaProducerTracer {
         var span = this.tracer.spanBuilder("producer transaction")
             .setSpanKind(SpanKind.INTERNAL)
             .setParent(otctx.getContext())
-            .setAttribute(SemanticAttributes.MESSAGING_SYSTEM, "kafka")
+            .setAttribute(MessagingIncubatingAttributes.MESSAGING_SYSTEM, "kafka")
             .startSpan();
         OpentelemetryContext.set(ctx, otctx.add(span));
         return new OpentelemetryKafkaProducerTxSpan(ctx, otctx, span);
@@ -60,15 +61,17 @@ public class OpentelemetryKafkaProducerTracer implements KafkaProducerTracer {
         }
 
         @Override
+        @SuppressWarnings("deprecation")
         public void close(RecordMetadata metadata) {
-            span.setAttribute(SemanticAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION, metadata.partition());
-            span.setAttribute(SemanticAttributes.MESSAGING_KAFKA_MESSAGE_OFFSET, metadata.offset());
+            span.setAttribute(MessagingIncubatingAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION, metadata.partition());
+            span.setAttribute(MessagingIncubatingAttributes.MESSAGING_DESTINATION_PARTITION_ID, String.valueOf(metadata.partition()));
+            span.setAttribute(MessagingIncubatingAttributes.MESSAGING_KAFKA_MESSAGE_OFFSET, metadata.offset());
             span.end();
         }
 
         @Override
         public void close(Throwable e) {
-            span.setAttribute(SemanticAttributes.ERROR_TYPE, e.getClass().getName());
+            span.setAttribute(ErrorAttributes.ERROR_TYPE, e.getClass().getName());
             span.setStatus(StatusCode.ERROR);
             span.recordException(e);
             span.end();

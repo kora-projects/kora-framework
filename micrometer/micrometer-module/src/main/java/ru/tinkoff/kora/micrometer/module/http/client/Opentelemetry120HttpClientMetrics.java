@@ -2,7 +2,10 @@ package ru.tinkoff.kora.micrometer.module.http.client;
 
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
+import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.http.client.common.telemetry.HttpClientMetrics;
 import ru.tinkoff.kora.http.common.HttpResultCode;
@@ -30,16 +33,17 @@ public final class Opentelemetry120HttpClientMetrics implements HttpClientMetric
     }
 
     private DistributionSummary duration(DurationKey key) {
+        @SuppressWarnings("deprecation")
         var builder = DistributionSummary.builder("http.client.duration")
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V120))
             .baseUnit("milliseconds")
             .tag("http.method", key.method)
-            .tag(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method)
-            .tag(SemanticAttributes.SERVER_ADDRESS.getKey(), key.host)
-            .tag(SemanticAttributes.URL_SCHEME.getKey(), key.scheme)
-            .tag(SemanticAttributes.HTTP_ROUTE.getKey(), key.target)
-            .tag(SemanticAttributes.HTTP_TARGET.getKey(), key.target)
-            .tag(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
+            .tag(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method)
+            .tag(ServerAttributes.SERVER_ADDRESS.getKey(), key.host)
+            .tag(UrlAttributes.URL_SCHEME.getKey(), key.scheme)
+            .tag(HttpAttributes.HTTP_ROUTE.getKey(), key.target)
+            .tag(HttpIncubatingAttributes.HTTP_TARGET.getKey(), key.target)
+            .tag(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
             .tag("http.status_code", Integer.toString(key.statusCode()));
 
         return builder.register(meterRegistry);

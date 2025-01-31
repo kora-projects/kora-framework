@@ -4,7 +4,9 @@ import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.ErrorAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.incubating.RpcIncubatingAttributes;
 import ru.tinkoff.kora.common.Context;
 import ru.tinkoff.kora.opentelemetry.common.OpentelemetryContext;
 import ru.tinkoff.kora.soap.client.common.SoapResult;
@@ -40,9 +42,9 @@ public class OpentelemetrySoapClientTracer implements SoapClientTracer {
             .setSpanKind(SpanKind.CLIENT)
             .setParent(otctx.getContext());
 
-        builder.setAttribute(SemanticAttributes.RPC_SERVICE, serviceName);
-        builder.setAttribute(SemanticAttributes.RPC_METHOD, soapMethod);
-        builder.setAttribute(SemanticAttributes.RPC_SYSTEM, url);
+        builder.setAttribute(RpcIncubatingAttributes.RPC_SERVICE, serviceName);
+        builder.setAttribute(RpcIncubatingAttributes.RPC_METHOD, soapMethod);
+        builder.setAttribute(RpcIncubatingAttributes.RPC_SYSTEM, url);
 
         var span = builder.startSpan();
 
@@ -60,12 +62,12 @@ public class OpentelemetrySoapClientTracer implements SoapClientTracer {
             @Override
             public void failure(SoapClientTelemetry.SoapTelemetryContext.SoapClientFailure failure) {
                 if (failure instanceof SoapClientTelemetry.SoapTelemetryContext.SoapClientFailure.InvalidHttpCode ie) {
-                    span.setAttribute(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE, ie.code());
+                    span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, ie.code());
                 } else if (failure instanceof SoapClientTelemetry.SoapTelemetryContext.SoapClientFailure.InternalServerError se) {
                     span.setAttribute(FAULT_CODE.getKey(), se.result().fault().getFaultcode().toString());
                     span.setAttribute(FAULT_ACTOR.getKey(), se.result().fault().getFaultactor());
                 } else if (failure instanceof SoapClientTelemetry.SoapTelemetryContext.SoapClientFailure.ProcessException pe) {
-                    span.setAttribute(SemanticAttributes.ERROR_TYPE.getKey(), pe.throwable().getClass().getCanonicalName());
+                    span.setAttribute(ErrorAttributes.ERROR_TYPE.getKey(), pe.throwable().getClass().getCanonicalName());
                     span.recordException(pe.throwable());
                 }
                 span.setStatus(StatusCode.ERROR);

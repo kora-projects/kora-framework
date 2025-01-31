@@ -1,7 +1,10 @@
 package ru.tinkoff.kora.micrometer.module.http.server.tag;
 
 import io.micrometer.core.instrument.Tag;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.ErrorAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,10 +17,10 @@ public final class Opentelemetry123MicrometerHttpServerTagsProvider implements M
     @Override
     public Iterable<Tag> getActiveRequestsTags(ActiveRequestsKey key) {
         return List.of(
-            Tag.of(SemanticAttributes.HTTP_ROUTE.getKey(), key.target()),
-            Tag.of(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method()),
-            Tag.of(SemanticAttributes.SERVER_ADDRESS.getKey(), key.host()),
-            Tag.of(SemanticAttributes.URL_SCHEME.getKey(), key.scheme())
+            Tag.of(HttpAttributes.HTTP_ROUTE.getKey(), key.target()),
+            Tag.of(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method()),
+            Tag.of(ServerAttributes.SERVER_ADDRESS.getKey(), key.host()),
+            Tag.of(UrlAttributes.URL_SCHEME.getKey(), key.scheme())
         );
     }
 
@@ -25,15 +28,15 @@ public final class Opentelemetry123MicrometerHttpServerTagsProvider implements M
     public Iterable<Tag> getDurationTags(DurationKey key) {
         var list = new ArrayList<Tag>(6);
         if (key.errorType() != null) {
-            list.add(Tag.of(SemanticAttributes.ERROR_TYPE.getKey(), key.errorType().getCanonicalName()));
+            list.add(Tag.of(ErrorAttributes.ERROR_TYPE.getKey(), key.errorType().getCanonicalName()));
         } else {
-            list.add(Tag.of(SemanticAttributes.ERROR_TYPE.getKey(), ""));
+            list.add(Tag.of(ErrorAttributes.ERROR_TYPE.getKey(), ""));
         }
-        list.add(Tag.of(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method()));
-        list.add(Tag.of(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode())));
-        list.add(Tag.of(SemanticAttributes.HTTP_ROUTE.getKey(), key.route()));
-        list.add(Tag.of(SemanticAttributes.URL_SCHEME.getKey(), key.scheme()));
-        list.add(Tag.of(SemanticAttributes.SERVER_ADDRESS.getKey(), key.host()));
+        list.add(Tag.of(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method()));
+        list.add(Tag.of(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode())));
+        list.add(Tag.of(HttpAttributes.HTTP_ROUTE.getKey(), key.route()));
+        list.add(Tag.of(UrlAttributes.URL_SCHEME.getKey(), key.scheme()));
+        list.add(Tag.of(ServerAttributes.SERVER_ADDRESS.getKey(), key.host()));
         return list;
     }
 

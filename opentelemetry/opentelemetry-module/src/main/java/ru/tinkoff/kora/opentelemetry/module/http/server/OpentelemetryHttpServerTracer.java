@@ -5,7 +5,9 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.TextMapGetter;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
 import ru.tinkoff.kora.common.Context;
 import ru.tinkoff.kora.http.common.HttpResultCode;
 import ru.tinkoff.kora.http.server.common.HttpServerResponse;
@@ -44,11 +46,11 @@ public final class OpentelemetryHttpServerTracer implements HttpServerTracer {
             .spanBuilder(routerRequest.method() + " " + template)
             .setSpanKind(SpanKind.SERVER)
             .setParent(parentCtx)
-            .setAttribute(SemanticAttributes.HTTP_REQUEST_METHOD, routerRequest.method())
-            .setAttribute(SemanticAttributes.URL_SCHEME, routerRequest.scheme())
-            .setAttribute(SemanticAttributes.SERVER_ADDRESS, routerRequest.hostName())
-            .setAttribute(SemanticAttributes.URL_PATH, routerRequest.path())
-            .setAttribute(SemanticAttributes.HTTP_ROUTE, template)
+            .setAttribute(HttpAttributes.HTTP_REQUEST_METHOD, routerRequest.method())
+            .setAttribute(UrlAttributes.URL_SCHEME, routerRequest.scheme())
+            .setAttribute(ServerAttributes.SERVER_ADDRESS, routerRequest.hostName())
+            .setAttribute(UrlAttributes.URL_PATH, routerRequest.path())
+            .setAttribute(HttpAttributes.HTTP_ROUTE, template)
             .startSpan();
 
         OpentelemetryContext.set(context, OpentelemetryContext.get(context).add(span));
@@ -62,7 +64,7 @@ public final class OpentelemetryHttpServerTracer implements HttpServerTracer {
                 span.recordException(exception);
             }
             if (statusCode >= 0) {
-                span.setAttribute(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE, statusCode);
+                span.setAttribute(HttpAttributes.HTTP_RESPONSE_STATUS_CODE, statusCode);
             }
             span.end();
         };

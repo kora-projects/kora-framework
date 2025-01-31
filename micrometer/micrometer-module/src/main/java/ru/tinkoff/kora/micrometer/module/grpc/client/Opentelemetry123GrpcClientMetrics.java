@@ -7,7 +7,9 @@ import io.grpc.Status;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.ErrorAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.incubating.RpcIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.grpc.client.telemetry.GrpcClientMetrics;
 import ru.tinkoff.kora.telemetry.common.TelemetryConfig;
@@ -84,22 +86,22 @@ public final class Opentelemetry123GrpcClientMetrics implements GrpcClientMetric
             serverPort = 80;
         }
         var list = new ArrayList<Tag>(7);
-        list.add(Tag.of(SemanticAttributes.RPC_METHOD.getKey(), key.bareMethodName()));
-        list.add(Tag.of(SemanticAttributes.RPC_SERVICE.getKey(), rpcService));
-        list.add(Tag.of(SemanticAttributes.RPC_SYSTEM.getKey(), SemanticAttributes.RpcSystemValues.GRPC));
-        list.add(Tag.of(SemanticAttributes.SERVER_ADDRESS.getKey(), serverAddress));
-        list.add(Tag.of(SemanticAttributes.SERVER_PORT.getKey(), String.valueOf(serverPort)));
+        list.add(Tag.of(RpcIncubatingAttributes.RPC_METHOD.getKey(), key.bareMethodName()));
+        list.add(Tag.of(RpcIncubatingAttributes.RPC_SERVICE.getKey(), rpcService));
+        list.add(Tag.of(RpcIncubatingAttributes.RPC_SYSTEM.getKey(), RpcIncubatingAttributes.RpcSystemValues.GRPC));
+        list.add(Tag.of(ServerAttributes.SERVER_ADDRESS.getKey(), serverAddress));
+        list.add(Tag.of(ServerAttributes.SERVER_PORT.getKey(), String.valueOf(serverPort)));
 
         if (key.code != null) {
-            list.add(Tag.of(SemanticAttributes.RPC_GRPC_STATUS_CODE.getKey(), String.valueOf(key.code)));
+            list.add(Tag.of(RpcIncubatingAttributes.RPC_GRPC_STATUS_CODE.getKey(), String.valueOf(key.code)));
         } else {
-            list.add(Tag.of(SemanticAttributes.RPC_GRPC_STATUS_CODE.getKey(), ""));
+            list.add(Tag.of(RpcIncubatingAttributes.RPC_GRPC_STATUS_CODE.getKey(), ""));
         }
 
         if (key.errorType != null) {
-            list.add(Tag.of(SemanticAttributes.ERROR_TYPE.getKey(), key.errorType.getCanonicalName()));
+            list.add(Tag.of(ErrorAttributes.ERROR_TYPE.getKey(), key.errorType.getCanonicalName()));
         } else {
-            list.add(Tag.of(SemanticAttributes.ERROR_TYPE.getKey(), ""));
+            list.add(Tag.of(ErrorAttributes.ERROR_TYPE.getKey(), ""));
         }
 
         return list;

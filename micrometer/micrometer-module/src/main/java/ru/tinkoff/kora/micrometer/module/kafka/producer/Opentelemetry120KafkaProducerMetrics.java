@@ -3,7 +3,7 @@ package ru.tinkoff.kora.micrometer.module.kafka.producer;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.kafka.KafkaClientMetrics;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.incubating.MessagingIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -63,7 +63,7 @@ public class Opentelemetry120KafkaProducerMetrics implements KafkaProducerMetric
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         this.micrometerMetrics.close();
         for (var i = this.metrics.entrySet().iterator(); i.hasNext(); ) {
             var entry = i.next();
@@ -77,14 +77,17 @@ public class Opentelemetry120KafkaProducerMetrics implements KafkaProducerMetric
 
     private DistributionSummary metrics(TopicPartition topicPartition) {
         var clientId = this.properties.get(ProducerConfig.CLIENT_ID_CONFIG);
+        var partitionString = Integer.toString(topicPartition.partition());
 
+        @SuppressWarnings("deprecation")
         var builder = DistributionSummary.builder("messaging.publish.duration")
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V120))
             .baseUnit("milliseconds")
-            .tag(SemanticAttributes.MESSAGING_SYSTEM.getKey(), "kafka")
-            .tag(SemanticAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION.getKey(), Integer.toString(topicPartition.partition()))
-            .tag(SemanticAttributes.MESSAGING_DESTINATION_NAME.getKey(), topicPartition.topic())
-            .tag(SemanticAttributes.MESSAGING_CLIENT_ID.getKey(), Objects.requireNonNullElse(clientId, "").toString());
+            .tag(MessagingIncubatingAttributes.MESSAGING_SYSTEM.getKey(), MessagingIncubatingAttributes.MessagingSystemValues.KAFKA)
+            .tag(MessagingIncubatingAttributes.MESSAGING_KAFKA_DESTINATION_PARTITION.getKey(), partitionString)
+            .tag(MessagingIncubatingAttributes.MESSAGING_DESTINATION_PARTITION_ID.getKey(), partitionString)
+            .tag(MessagingIncubatingAttributes.MESSAGING_DESTINATION_NAME.getKey(), topicPartition.topic())
+            .tag(MessagingIncubatingAttributes.MESSAGING_CLIENT_ID.getKey(), Objects.requireNonNullElse(clientId, "").toString());
 
         return builder.register(this.meterRegistry);
     }

@@ -3,7 +3,8 @@ package ru.tinkoff.kora.micrometer.module.s3.client;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.opentelemetry.api.common.AttributeKey;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.incubating.AwsIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.s3.client.S3Exception;
 import ru.tinkoff.kora.s3.client.telemetry.S3ClientMetrics;
@@ -13,7 +14,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static io.opentelemetry.api.common.AttributeKey.stringKey;
-import static io.opentelemetry.semconv.SemanticAttributes.AWS_S3_BUCKET;
 
 public class Opentelemetry123S3ClientMetrics implements S3ClientMetrics {
 
@@ -48,9 +48,9 @@ public class Opentelemetry123S3ClientMetrics implements S3ClientMetrics {
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V123))
             .baseUnit("s")
             .tag(CLIENT_NAME.getKey(), client.getSimpleName())
-            .tag(AWS_S3_BUCKET.getKey(), key.bucket())
-            .tag(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
-            .tag(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
+            .tag(AwsIncubatingAttributes.AWS_S3_BUCKET.getKey(), key.bucket())
+            .tag(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
+            .tag(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
             .tag(ERROR_CODE.getKey(), Objects.requireNonNullElse(key.errorCode(), ""));
 
         return builder.register(meterRegistry);

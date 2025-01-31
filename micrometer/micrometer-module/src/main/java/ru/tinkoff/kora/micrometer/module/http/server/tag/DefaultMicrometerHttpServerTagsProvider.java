@@ -1,7 +1,10 @@
 package ru.tinkoff.kora.micrometer.module.http.server.tag;
 
 import io.micrometer.core.instrument.Tag;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
+import io.opentelemetry.semconv.incubating.HttpIncubatingAttributes;
 
 import java.util.List;
 
@@ -11,28 +14,30 @@ import java.util.List;
 public class DefaultMicrometerHttpServerTagsProvider implements MicrometerHttpServerTagsProvider {
 
     @Override
+    @SuppressWarnings("deprecation")
     public Iterable<Tag> getActiveRequestsTags(ActiveRequestsKey key) {
         return List.of(
-            Tag.of(SemanticAttributes.HTTP_ROUTE.getKey(), key.target()),
-            Tag.of(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method()),
-            Tag.of(SemanticAttributes.SERVER_ADDRESS.getKey(), key.host()),
-            Tag.of(SemanticAttributes.URL_SCHEME.getKey(), key.scheme()),
-            Tag.of(SemanticAttributes.HTTP_TARGET.getKey(), key.target()),
-            Tag.of(SemanticAttributes.HTTP_METHOD.getKey(), key.method())
+            Tag.of(HttpAttributes.HTTP_ROUTE.getKey(), key.target()),
+            Tag.of(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method()),
+            Tag.of(ServerAttributes.SERVER_ADDRESS.getKey(), key.host()),
+            Tag.of(UrlAttributes.URL_SCHEME.getKey(), key.scheme()),
+            Tag.of(HttpIncubatingAttributes.HTTP_TARGET.getKey(), key.target()),
+            Tag.of(HttpIncubatingAttributes.HTTP_METHOD.getKey(), key.method())
         );
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Iterable<Tag> getDurationTags(DurationKey key) {
         return List.of(
-            Tag.of(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method()),
-            Tag.of(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode())),
-            Tag.of(SemanticAttributes.HTTP_ROUTE.getKey(), key.route()),
-            Tag.of(SemanticAttributes.SERVER_ADDRESS.getKey(), key.host()),
-            Tag.of(SemanticAttributes.URL_SCHEME.getKey(), key.scheme()),
-            Tag.of(SemanticAttributes.HTTP_TARGET.getKey(), key.route()),
-            Tag.of(SemanticAttributes.HTTP_METHOD.getKey(), key.method()),
-            Tag.of(SemanticAttributes.HTTP_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
+            Tag.of(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method()),
+            Tag.of(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode())),
+            Tag.of(HttpAttributes.HTTP_ROUTE.getKey(), key.route()),
+            Tag.of(ServerAttributes.SERVER_ADDRESS.getKey(), key.host()),
+            Tag.of(UrlAttributes.URL_SCHEME.getKey(), key.scheme()),
+            Tag.of(HttpIncubatingAttributes.HTTP_TARGET.getKey(), key.route()),
+            Tag.of(HttpIncubatingAttributes.HTTP_METHOD.getKey(), key.method()),
+            Tag.of(HttpIncubatingAttributes.HTTP_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
         );
     }
 

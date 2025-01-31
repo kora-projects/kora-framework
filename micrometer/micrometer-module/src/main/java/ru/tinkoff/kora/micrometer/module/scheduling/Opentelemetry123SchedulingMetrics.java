@@ -2,7 +2,8 @@ package ru.tinkoff.kora.micrometer.module.scheduling;
 
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.ErrorAttributes;
+import io.opentelemetry.semconv.incubating.CodeIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.scheduling.common.telemetry.SchedulingMetrics;
 import ru.tinkoff.kora.telemetry.common.TelemetryConfig;
@@ -30,13 +31,13 @@ public class Opentelemetry123SchedulingMetrics implements SchedulingMetrics {
         var builder = DistributionSummary.builder("scheduling.job.duration")
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V123))
             .baseUnit("s")
-            .tag(SemanticAttributes.CODE_FUNCTION.getKey(), this.methodName)
+            .tag(CodeIncubatingAttributes.CODE_FUNCTION.getKey(), this.methodName)
             .tag("code.class", this.className);
 
         if (error != null) {
-            builder.tag(SemanticAttributes.ERROR_TYPE.getKey(), error.getCanonicalName());
+            builder.tag(ErrorAttributes.ERROR_TYPE.getKey(), error.getCanonicalName());
         } else {
-            builder.tag(SemanticAttributes.ERROR_TYPE.getKey(), "");
+            builder.tag(ErrorAttributes.ERROR_TYPE.getKey(), "");
         }
 
         return builder.register(this.meterRegistry);

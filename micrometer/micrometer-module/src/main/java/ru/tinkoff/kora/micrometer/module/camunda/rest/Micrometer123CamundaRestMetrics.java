@@ -3,7 +3,10 @@ package ru.tinkoff.kora.micrometer.module.camunda.rest;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.ErrorAttributes;
+import io.opentelemetry.semconv.HttpAttributes;
+import io.opentelemetry.semconv.ServerAttributes;
+import io.opentelemetry.semconv.UrlAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.camunda.rest.telemetry.CamundaRestMetrics;
 import ru.tinkoff.kora.http.common.HttpResultCode;
@@ -55,10 +58,10 @@ public final class Micrometer123CamundaRestMetrics implements CamundaRestMetrics
 
     private void registerActiveRequestsGauge(ActiveRequestsKey key, AtomicInteger counter) {
         Gauge.builder("camunda.rest.server.active_requests", counter, AtomicInteger::get)
-            .tags(SemanticAttributes.HTTP_ROUTE.getKey(), key.target())
-            .tags(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
-            .tags(SemanticAttributes.SERVER_ADDRESS.getKey(), key.host())
-            .tags(SemanticAttributes.URL_SCHEME.getKey(), key.scheme())
+            .tags(HttpAttributes.HTTP_ROUTE.getKey(), key.target())
+            .tags(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
+            .tags(ServerAttributes.SERVER_ADDRESS.getKey(), key.host())
+            .tags(UrlAttributes.URL_SCHEME.getKey(), key.scheme())
             .register(this.meterRegistry);
     }
 
@@ -70,12 +73,12 @@ public final class Micrometer123CamundaRestMetrics implements CamundaRestMetrics
         return DistributionSummary.builder("camunda.rest.server.request.duration")
             .serviceLevelObjectives(this.config.slo(TelemetryConfig.MetricsConfig.OpentelemetrySpec.V123))
             .baseUnit("s")
-            .tags(SemanticAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
-            .tags(SemanticAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
-            .tags(SemanticAttributes.HTTP_ROUTE.getKey(), key.route())
-            .tags(SemanticAttributes.URL_SCHEME.getKey(), key.scheme())
-            .tags(SemanticAttributes.SERVER_ADDRESS.getKey(), key.host())
-            .tag(SemanticAttributes.ERROR_TYPE.getKey(), errorType)
+            .tags(HttpAttributes.HTTP_REQUEST_METHOD.getKey(), key.method())
+            .tags(HttpAttributes.HTTP_RESPONSE_STATUS_CODE.getKey(), Integer.toString(key.statusCode()))
+            .tags(HttpAttributes.HTTP_ROUTE.getKey(), key.route())
+            .tags(UrlAttributes.URL_SCHEME.getKey(), key.scheme())
+            .tags(ServerAttributes.SERVER_ADDRESS.getKey(), key.host())
+            .tag(ErrorAttributes.ERROR_TYPE.getKey(), errorType)
             .register(this.meterRegistry);
     }
 }

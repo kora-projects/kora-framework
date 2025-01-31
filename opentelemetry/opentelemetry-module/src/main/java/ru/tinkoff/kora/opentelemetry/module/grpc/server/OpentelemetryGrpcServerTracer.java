@@ -7,7 +7,9 @@ import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator;
 import io.opentelemetry.context.propagation.TextMapGetter;
-import io.opentelemetry.semconv.SemanticAttributes;
+import io.opentelemetry.semconv.NetworkAttributes;
+import io.opentelemetry.semconv.incubating.NetIncubatingAttributes;
+import io.opentelemetry.semconv.incubating.RpcIncubatingAttributes;
 import jakarta.annotation.Nullable;
 import ru.tinkoff.kora.common.Context;
 import ru.tinkoff.kora.grpc.server.telemetry.GrpcServerTracer;
@@ -42,14 +44,16 @@ public final class OpentelemetryGrpcServerTracer implements GrpcServerTracer {
         var ipAddress = call.getAttributes().get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR).toString();
         var context = Context.current();
         var parentCtx = W3CTraceContextPropagator.getInstance().extract(root(), headers, OpentelemetryGrpcServerTracer.GrpcHeaderMapGetter.INSTANCE);
+        @SuppressWarnings("deprecation")
         var span = this.tracer
             .spanBuilder(serviceName + "/" + methodName)
             .setSpanKind(SpanKind.SERVER)
             .setParent(parentCtx)
-            .setAttribute(SemanticAttributes.RPC_SYSTEM, "grpc")
-            .setAttribute(SemanticAttributes.RPC_SERVICE, serviceName)
-            .setAttribute(SemanticAttributes.RPC_METHOD, methodName)
-            .setAttribute(SemanticAttributes.NET_SOCK_PEER_ADDR, ipAddress)
+            .setAttribute(RpcIncubatingAttributes.RPC_SYSTEM, "grpc")
+            .setAttribute(RpcIncubatingAttributes.RPC_SERVICE, serviceName)
+            .setAttribute(RpcIncubatingAttributes.RPC_METHOD, methodName)
+            .setAttribute(NetIncubatingAttributes.NET_SOCK_PEER_ADDR, ipAddress)
+            .setAttribute(NetworkAttributes.NETWORK_PEER_ADDRESS, ipAddress)
             .startSpan();
 
         OpentelemetryContext.set(context, OpentelemetryContext.get(context).add(span));
