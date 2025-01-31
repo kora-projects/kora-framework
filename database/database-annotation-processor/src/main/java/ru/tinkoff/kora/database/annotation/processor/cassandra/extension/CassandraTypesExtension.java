@@ -105,7 +105,7 @@ public class CassandraTypesExtension implements KoraExtension {
             entityType = ((DeclaredType) entityType).getTypeArguments().get(0);
             element = (TypeElement) this.types.asElement(entityType);
             if (AnnotationUtils.findAnnotation(element, CassandraTypes.UDT_ANNOTATION) != null) {
-                return KoraExtensionDependencyGenerator.generatedFrom(elements, element, CassandraTypes.RESULT_COLUMN_MAPPER);
+                return KoraExtensionDependencyGenerator.generatedFrom(elements, element, "List_CassandraRowColumnMapper");
             }
         }
         return null;
@@ -121,7 +121,7 @@ public class CassandraTypesExtension implements KoraExtension {
             entityType = ((DeclaredType) entityType).getTypeArguments().get(0);
             element = (TypeElement) this.types.asElement(entityType);
             if (AnnotationUtils.findAnnotation(element, CassandraTypes.UDT_ANNOTATION) != null) {
-                return KoraExtensionDependencyGenerator.generatedFrom(elements, element, CassandraTypes.PARAMETER_COLUMN_MAPPER);
+                return KoraExtensionDependencyGenerator.generatedFrom(elements, element, "List_CassandraParameterColumnMapper");
             }
         }
         return null;
